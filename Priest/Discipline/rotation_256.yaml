@@ -160,6 +160,7 @@ lists:
     - trinket_2,if=var.trinket2_living_silk&trinket_2.cd=0&config.living_silk_usage!=3&((config.living_silk_usage=1)|var.living_silk_treshold_trigger)
   out_of_combat:
     - penance,cycle=members,if=health.pct<config.OOC_penance_treshold&!player.combat
+    - flash_heal,cycle=members,if=health.pct<config.OOC_flash_heal_treshold&!player.combat
   offensive:
     - shadow_word_pain,if=debuff.shadow_word_pain.remains<=0
     - penance,if=cooldown.penance.charges=2|buff.power_of_the_dark_side.up|!cooldown.mind_blast.ready
