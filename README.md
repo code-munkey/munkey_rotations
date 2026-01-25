@@ -1,5 +1,11 @@
 # Munkey Rotations
+
 Real-life optimized rotations for World of Warcraft that go beyond simple priority lists. Our rotations are designed with extensive customization options and intelligent decision-making to adapt to actual gameplay scenarios.
+
+## Quick Links
+- 🚀 [Getting Started](#getting-started)
+- 🐛 [Bug Report Template](BUG_REPORT_EXAMPLE.md)
+- 💡 [Feature Request Template](FEATURE_REQUEST_TEMPLATE.md)
 
 ## Philosophy
 Traditional rotations often rely on static priority lists that don't account for the dynamic nature of real encounters. Our rotations feature:
