@@ -4,6 +4,10 @@ A comprehensive Discipline Priest rotation for healing and damage optimization w
 ## Overview
 This rotation provides automated healing, damage dealing, and utility management for Discipline Priests. It focuses on maintaining Atonement buffs, efficient healing through damage, and proper cooldown usage.
 
+## KNOWN ISSUES & FIXES
+- **Pain Suppressing wrong target** If you have PS MO enabled, it can sometimes cast it on yourself unless you modify the macro for PS to: /cast [@mouseover, exists] [@target] Pain Suppression
+- **MO Pull and SW:P Spread not working** For the pull with MO and MO spread of SW: Pain you need to modify that one to /cast [@mouseover, exists][@target]  Shadow Word: Pain
+
 ## Key Features
 - **Atonement Management**: Automatically spreads and maintains Atonement buffs
 - **Smart Healing**: Priority-based healing with configurable thresholds

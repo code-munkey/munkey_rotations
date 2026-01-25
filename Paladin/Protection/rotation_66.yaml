@@ -1,0 +1,109 @@
+version: 1
+entry: main
+
+morphs:
+  
+
+config:
+  auto_targeting:
+    label: "Auto-target if no target"
+    type: checkbox
+    default: true
+  allow_pull_with_mo:
+    label: "Pull with MO"
+    type: checkbox
+    default: true
+  ardent_defender_treshold:
+    label: "Ardent Defender HP%"
+    type: slider
+    min: 30
+    max: 90
+    default: 90
+  divine_shield_treshold:
+    label: "Divine Shield HP%"
+    type: slider
+    min: 5
+    max: 20
+    default: 10
+  guardian_kings_treshold:
+    label: "Guardian HP%"
+    type: slider
+    min: 20
+    max: 70
+    default: 40
+
+variables:
+  defensives_available: cooldown.guardian_of_ancient_kings.ready|cooldown.ardent_defender.ready|(cooldown.divine_shield.ready&talent.final_stand)
+  immunity_expires_within_1s: buff.divine_shield.remains<1|buff.blessing_of_protection.remains<1
+
+#shining light
+
+lists:
+  opener:
+    - consecration,if=target.range=5&!buff.consecration.up&!player.moving
+    - blessed_hammer,if=target.range=5&holy_power<5&target.debuff.blessed_hammer.remains<2
+  cooldowns:
+    - hammer_of_light,override=divine_toll,if=buff.hammer_of_light.up&holy_power=5
+    - avenging_wrath
+    - divine_toll
+  builders:
+    - hammer_of_wrath,override=judgment,if=buff.avenging_wrath.up
+    - judgment
+  mouseover_combat_res:
+    - Intercession.mouseover,if=mouseover.friendly&!mouseover.alive&holy_power>=3
+    - blessed_hammer,if=target.debuff.blessed_hammer.down|(cooldown.judgment.remains<player.gcd>?player.gcd.remains|cooldown.hammer_of_wrath.remains<player.gcd>?player.gcd.remains)
+    - hammer_of_wrath,override=judgment,if=buff.avenging_wrath.up
+    - judgment
+  mouseover_enemy:
+    - hand_of_reckoning,if=mouseover.enemy&mouseover.targeting_party
+    - avengers_shield.mouseover
+    - divine_toll.mouseover
+  mouseover_interrupt:
+    - avengers_shield,if=interrupts.mouseover.ready
+    - hammer_of_justice,if=interrupts.mouseover.stun.ready
+  interrupts:
+    - blinding_light,if=interrupts.8y.count>1&cooldown.blinding_light.ready
+    - rebuke,if=target.casting.interruptible&target.casting.target.casting.elapsed>200&target.target.casting.important
+    - avengers_shield,if=target.casting.interruptible&target.casting.target.casting.elapsed>200&target.target.casting.important
+  aoe:
+    - call_action_list,name=opener
+    - avengers_shield
+    - call_action_list,name=cooldowns,if=fight_remains>20
+    - shield_of_the_righteous,if=(buff.bulwark_of_righteous_fury.up&!buff.shield_of_the_righteous.up)|holy_power=5
+    - call_action_list,name=builders
+    - judgment
+  st:
+    - call_action_list,name=opener
+    - call_action_list,name=cooldowns,if=fight_remains>20
+    - shield_of_the_righteous,if=(buff.bulwark_of_righteous_fury.up&!buff.shield_of_the_righteous.up)|holy_power=5
+    - call_action_list,name=builders
+    - avengers_shield
+  defensives:
+    - guardian_of_ancient_kings,if=health.pct<config.guardian_kings_treshold
+    - ardent_defender,if=health.pct<config.ardent_defender_treshold
+    - divine_shield,if=health.pct<config.divine_shield_treshold&buff.ardent_defender.down
+  shining_light:
+    - word_of_glory.player,if=health.pct<70
+    - word_of_glory,cycle=members,if=health.pct<60
+  emergency:
+    - call_action_list,name=shining_light,if=buff.shining_light.up
+    - word_of_glory.player,if=health.pct<20&!var.defensives_available&holy_power>3
+    - word_of_glory,cycle=members,if=health.pct<20&holy_power>3
+    - blessing_of_sacrifice,cycle=members,if=health.pct<40&player.health.pct<90
+    - blessing_of_protection,cycle=members,if=health.pct<10&player.health.pct<70
+    - lay_on_hands.player,if=health.pct<20&var.immunity_expires_within_1s
+    - lay_on_hands,cycle=members,if=health.pct<10&player.health.pct<50
+  main:
+    - return,if=!state.rotation
+    - call_action_list,name=mouseover_enemy,if=mouseover.exists&mouseover.enemy&config.allow_pull_with_mo&mouseover.range>15&mouseover.range<30
+    - redemption,if=mouseover.exists&mouseover.friendly&!mouseover.alive&!player.combat
+    - lay_on_hands,if=mouseover.exists&mouseover.friendly&mouseover.health.pct<20
+    - return,if=!player.combat
+    - target_enemy,if=!target.exists
+    - call_action_list,name=interrupts
+    - call_action_list,name=mouseover_interrupt
+    - call_action_list,name=defensives
+    - call_action_list,name=mouseover_combat_res
+    - call_action_list,name=emergency
+    - call_action_list,name=aoe,if=enemies.combat.8y>1
+    - call_action_list,name=st,if=enemies.combat.8y=1
