@@ -1,0 +1,7 @@
+/.kiro
+/dist
+/WowRotationManager
+/*.ps1
+/*.bat
+/*.sh
+/*.env

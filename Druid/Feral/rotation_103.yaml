@@ -1,0 +1,1026 @@
+version: 1
+author: munkey
+class: druid
+spec: feral
+name: Feral M+
+description: This is a basic rotation for feral in M+ content
+entry: main
+
+morphs:
+  # Talent-based spell replacements
+  berserk: incarnation_avatar_of_ashamane
+  tigers_fury: tigers_fury
+  rake: rake
+  rip: rip
+  shred: shred
+  swipe: swipe_cat
+  ferocious_bite: ferocious_bite
+  primal_wrath: primal_wrath
+  convoke_the_spirits: convoke_the_spirits
+  feral_frenzy: feral_frenzy
+
+config:
+  # Resource Management Configuration
+  energy_dump_threshold:
+    label: "Energy Dump Threshold %"
+    type: slider
+    min: 70
+    max: 95
+    default: 80
+    description: "Dump energy when above this % and Tiger's Fury coming off CD"
+  
+  tiger_fury_prep_time:
+    label: "Tiger's Fury Prep Time (s)"
+    type: slider
+    min: 1.0
+    max: 5.0
+    default: 3.0
+    description: "Start energy dumping when Tiger's Fury CD is below this"
+  
+  # DoT Management Configuration
+  pandemic_threshold:
+    label: "Pandemic Refresh Threshold"
+    type: slider
+    min: 0.2
+    max: 0.4
+    default: 0.3
+    description: "Refresh DoTs when below this % of duration remaining"
+  
+  rake_pandemic_threshold:
+    label: "Rake Pandemic Threshold"
+    type: slider
+    min: 0.2
+    max: 0.4
+    default: 0.3
+    description: "Refresh Rake when below this % of duration remaining"
+  
+  rip_pandemic_threshold:
+    label: "Rip Pandemic Threshold"
+    type: slider
+    min: 0.2
+    max: 0.4
+    default: 0.3
+    description: "Refresh Rip when below this % of duration remaining"
+  
+  # Target Detection Configuration
+  aoe_enemy_threshold:
+    label: "AoE Enemy Threshold"
+    type: slider
+    min: 2
+    max: 5
+    default: 3
+    description: "Switch to AoE rotation when this many enemies present"
+  
+  target_switching_enabled:
+    label: "Enable Target Switching"
+    type: checkbox
+    default: true
+    description: "Allow automatic target switching for optimal DPS"
+  
+  # Cooldown Management Configuration
+  sync_major_cooldowns:
+    label: "Sync Major Cooldowns"
+    type: checkbox
+    default: true
+    description: "Synchronize Berserk, Tiger's Fury, and Convoke usage"
+  
+  hold_cooldowns_for_sync:
+    label: "Hold CDs for Sync"
+    type: checkbox
+    default: true
+    description: "Hold cooldowns to synchronize with other major CDs"
+  
+  convoke_sync_window:
+    label: "Convoke Sync Window (s)"
+    type: slider
+    min: 5
+    max: 15
+    default: 10
+    description: "Hold Convoke if other CDs ready within this window"
+  
+  # Opener Configuration
+  use_stealth_opener:
+    label: "Use Stealth Opener"
+    type: checkbox
+    default: true
+    description: "Execute optimized opener sequence from stealth"
+  
+  opener_sequence_strict:
+    label: "Strict Opener Sequence"
+    type: checkbox
+    default: false
+    description: "Follow exact opener sequence or allow flexibility"
+  
+  # Berserk Window Configuration
+  berserk_combo_alternation:
+    label: "Berserk Combo Alternation"
+    type: checkbox
+    default: true
+    description: "Alternate between finishers and builders during Berserk"
+  
+  berserk_overflow_management:
+    label: "Berserk Overflow Management"
+    type: checkbox
+    default: true
+    description: "Manage combo point overflow during Berserk windows"
+  
+  # Proc Management Configuration
+  apex_predator_priority:
+    label: "Apex Predator Priority"
+    type: checkbox
+    default: true
+    description: "Prioritize Ferocious Bite when Apex Predator's Craving procs"
+  
+  sudden_ambush_priority:
+    label: "Sudden Ambush Priority"
+    type: checkbox
+    default: true
+    description: "Prioritize Shred when Sudden Ambush procs with active Rake"
+  
+  ravage_proc_priority:
+    label: "Ravage Proc Priority"
+    type: checkbox
+    default: true
+    description: "Prioritize Ravage procs for Druid of the Claw"
+  
+  # Defensive and Utility Configuration
+  auto_interrupts:
+    label: "Auto Interrupts"
+    type: checkbox
+    default: true
+    description: "Automatically interrupt important enemy casts"
+  
+  interrupt_delay:
+    label: "Interrupt Delay (ms)"
+    type: slider
+    min: 100
+    max: 500
+    default: 200
+    description: "Delay before interrupting to avoid wasting interrupts"
+  
+  only_important_interrupts:
+    label: "Only Important Interrupts"
+    type: checkbox
+    default: true
+    description: "Only interrupt spells marked as important"
+  
+  # Performance Configuration
+  min_fight_duration:
+    label: "Min Fight Duration (s)"
+    type: slider
+    min: 10
+    max: 60
+    default: 20
+    description: "Don't use major cooldowns if fight ends soon"
+  
+  target_switching_range:
+    label: "Target Switch Range (yards)"
+    type: slider
+    min: 5
+    max: 15
+    default: 8
+    description: "Maximum range for target switching"
+  
+  # Additional Energy Management Configuration
+  energy_cap_threshold:
+    label: "Energy Cap Threshold %"
+    type: slider
+    min: 85
+    max: 100
+    default: 95
+    description: "Emergency dump energy when above this % to prevent waste"
+  
+  combo_point_waste_threshold:
+    label: "Combo Point Waste Threshold"
+    type: slider
+    min: 3
+    max: 5
+    default: 4
+    description: "Consider combo point waste when at or above this value"
+  
+  # Advanced Opener Configuration
+  opener_rake_delay:
+    label: "Opener Rake Delay (ms)"
+    type: slider
+    min: 0
+    max: 500
+    default: 100
+    description: "Delay before casting Rake in opener sequence"
+  
+  opener_flexibility_window:
+    label: "Opener Flexibility Window (s)"
+    type: slider
+    min: 3
+    max: 10
+    default: 5
+    description: "Time window for flexible opener execution"
+  
+  # Enhanced Target Switching Configuration
+  dot_spread_priority:
+    label: "DoT Spread Priority"
+    type: checkbox
+    default: true
+    description: "Prioritize spreading DoTs to multiple targets in AoE"
+  
+  maintain_dots_on_switch:
+    label: "Maintain DoTs on Switch"
+    type: checkbox
+    default: true
+    description: "Keep DoTs active when switching between targets"
+  
+  priority_target_focus:
+    label: "Priority Target Focus"
+    type: checkbox
+    default: true
+    description: "Focus on elite/rare/boss targets when available"
+
+variables:
+  # === ENERGY MANAGEMENT VARIABLES ===
+  # Energy dump needed when above threshold and Tiger's Fury coming off CD
+  energy_dump_needed: player.energy.pct>config.energy_dump_threshold&cooldown.tigers_fury.remains<config.tiger_fury_prep_time
+  
+  # Energy availability checks for different abilities
+  energy_available_rake: player.energy>=35
+  energy_available_rip: player.energy>=30
+  energy_available_shred: player.energy>=40
+  energy_available_swipe: player.energy>=45
+  energy_available_ferocious_bite: player.energy>=25
+  energy_available_primal_wrath: player.energy>=20
+  
+  # Energy efficiency validation
+  energy_waste_risk: player.energy>90&!var.energy_dump_needed
+  energy_starved: player.energy<30
+  energy_cap_reached: player.energy.pct>=config.energy_cap_threshold
+  
+  # === COMBO POINT TRACKING VARIABLES ===
+  # Basic combo point states
+  combo_points_capped: combo_points>=5
+  combo_points_for_finisher: combo_points>=5
+  combo_points_low: combo_points<=2
+  combo_points_empty: combo_points=0
+  combo_point_waste_threshold_met: combo_points>=config.combo_point_waste_threshold
+  
+  # Berserk overflow mechanics
+  berserk_window_active: buff.berserk.up|buff.incarnation_avatar_of_ashamane.up
+  overflow_combo_points: var.berserk_window_active&combo_points>5
+  berserk_combo_buffer: var.berserk_window_active&combo_points<5
+  
+  # Combo point efficiency tracking
+  combo_point_waste_risk: combo_points>=var.combo_point_waste_threshold_met&!var.combo_points_for_finisher
+  combo_generation_needed: combo_points<3&!buff.apex_predators_craving.up
+  
+  # Resource efficiency validation variables
+  resource_efficiency_good: !var.energy_waste_risk&!var.combo_point_waste_risk
+  resource_dump_priority: var.energy_dump_needed|var.combo_points_capped|var.energy_cap_reached
+  resource_generation_priority: var.energy_starved|var.combo_generation_needed
+  
+  # === TARGET DETECTION AND ENEMY TRACKING VARIABLES ===
+  # Enemy count and range detection
+  enemies_in_range: enemies.8y
+  enemies_in_melee: enemies.5y
+  enemies_total: enemies
+  
+  # AoE vs single-target switching logic
+  aoe_situation: var.enemies_in_range>=config.aoe_enemy_threshold
+  single_target_situation: var.enemies_in_range<config.aoe_enemy_threshold
+  cleave_situation: var.enemies_in_range>=2&var.enemies_in_range<config.aoe_enemy_threshold
+  
+  # Target validation variables
+  target_valid: target.exists&target.enemy&target.alive
+  target_in_range: target.distance<=config.target_switching_range
+  target_in_melee: target.distance<=5
+  target_attackable: var.target_valid&var.target_in_range&!target.immune
+  
+  # Target switching logic
+  target_switching_available: config.target_switching_enabled&var.enemies_in_range>1
+  best_target_available: var.target_switching_available&target.health.pct<100
+  priority_target_exists: target.classification.elite|target.classification.rare|target.classification.boss
+  
+  # Multi-target DoT maintenance
+  rake_targets_missing: enemies.missing_debuff.rake.8y
+  rip_targets_missing: enemies.missing_debuff.rip.8y
+  dot_spread_needed: var.aoe_situation&(var.rake_targets_missing>0|var.rip_targets_missing>0)&config.dot_spread_priority
+  dot_maintenance_priority: config.maintain_dots_on_switch&var.target_switching_available
+  
+  # Range and positioning validation
+  enemies_in_swipe_range: enemies.8y
+  enemies_in_primal_wrath_range: enemies.8y
+  optimal_positioning: var.enemies_in_range=var.enemies_in_swipe_range
+  
+  # AoE threshold and priority switching
+  aoe_threshold_met: var.enemies_in_range>=config.aoe_enemy_threshold
+  aoe_priority_active: var.aoe_threshold_met&var.optimal_positioning
+  single_target_priority_active: !var.aoe_threshold_met&var.target_attackable
+  
+  # Target health and priority assessment
+  target_low_health: target.health.pct<=35
+  target_dying_soon: target.time_to_die<=10
+  execute_range: var.target_low_health&var.target_dying_soon
+  
+  # Multi-target priority assessment
+  high_priority_targets: enemies.classification.elite.8y+enemies.classification.rare.8y+enemies.classification.boss.8y
+  focus_high_priority: var.high_priority_targets>0&config.target_switching_enabled&config.priority_target_focus
+  
+  # === DOT TRACKING VARIABLES ===
+  # Rake DoT tracking
+  rake_missing: !target.debuff.rake.up
+  rake_pandemic: target.debuff.rake.remains<target.debuff.rake.duration*config.rake_pandemic_threshold
+  rake_refresh_needed: var.rake_missing|var.rake_pandemic
+  rake_duration_remaining: target.debuff.rake.remains
+  
+  # Rip DoT tracking  
+  rip_missing: !target.debuff.rip.up
+  rip_pandemic: target.debuff.rip.remains<target.debuff.rip.duration*config.rip_pandemic_threshold
+  rip_refresh_needed: var.rip_missing|var.rip_pandemic
+  rip_duration_remaining: target.debuff.rip.remains
+  
+  # DoT management priorities
+  dots_missing: var.rake_missing|var.rip_missing
+  dots_pandemic: var.rake_pandemic|var.rip_pandemic
+  dots_active: target.debuff.rake.up&target.debuff.rip.up
+  
+  # === PROC TRACKING VARIABLES ===
+  # Apex Predator's Craving proc tracking
+  apex_predators_craving_up: buff.apex_predators_craving.up
+  apex_predators_craving_remains: buff.apex_predators_craving.remains
+  apex_predators_craving_priority: var.apex_predators_craving_up&config.apex_predator_priority
+  
+  # Sudden Ambush proc tracking
+  sudden_ambush_up: buff.sudden_ambush.up
+  sudden_ambush_remains: buff.sudden_ambush.remains
+  sudden_ambush_with_rake: var.sudden_ambush_up&target.debuff.rake.up&config.sudden_ambush_priority
+  
+  # Ravage proc tracking (Druid of the Claw)
+  ravage_up: buff.ravage.up
+  ravage_stacks: buff.ravage.stack
+  ravage_remains: buff.ravage.remains
+  ravage_priority: var.ravage_up&config.ravage_proc_priority
+  
+  # === BUFF STACK TRACKING VARIABLES ===
+  # Panther's Guile stack tracking
+  panthers_guile_stacks: buff.panthers_guile.stack
+  panthers_guile_max_stacks: var.panthers_guile_stacks>=3
+  panthers_guile_active: buff.panthers_guile.up
+  
+  # Tiger's Fury buff tracking
+  tigers_fury_up: buff.tigers_fury.up
+  tigers_fury_remains: buff.tigers_fury.remains
+  tigers_fury_ready: cooldown.tigers_fury.ready
+  tigers_fury_cd_remains: cooldown.tigers_fury.remains
+  
+  # Berserk/Incarnation buff tracking
+  berserk_up: buff.berserk.up|buff.incarnation_avatar_of_ashamane.up
+  berserk_remains: buff.berserk.remains+buff.incarnation_avatar_of_ashamane.remains
+  berserk_ready: cooldown.berserk.ready|cooldown.incarnation_avatar_of_ashamane.ready
+  berserk_cd_remains: cooldown.berserk.remains+cooldown.incarnation_avatar_of_ashamane.remains
+  
+  # Convoke the Spirits tracking
+  convoke_ready: cooldown.convoke_the_spirits.ready
+  convoke_cd_remains: cooldown.convoke_the_spirits.remains
+  convoke_cast_time: spell.convoke_the_spirits.cast_time
+  
+  # Feral Frenzy tracking
+  feral_frenzy_ready: cooldown.feral_frenzy.ready
+  feral_frenzy_cd_remains: cooldown.feral_frenzy.remains
+  feral_frenzy_charges: cooldown.feral_frenzy.charges
+  
+  # === COOLDOWN SYNCHRONIZATION VARIABLES ===
+  # Major cooldown availability
+  major_cooldowns_ready: var.berserk_ready&var.tigers_fury_ready&config.sync_major_cooldowns
+  convoke_sync_ready: var.major_cooldowns_ready&var.convoke_ready
+  cooldown_sync_window: var.berserk_cd_remains<config.convoke_sync_window|var.tigers_fury_cd_remains<config.convoke_sync_window
+  
+  # Cooldown holding logic
+  hold_berserk_for_sync: config.hold_cooldowns_for_sync&var.tigers_fury_cd_remains<config.convoke_sync_window&!var.tigers_fury_ready
+  hold_tigers_fury_for_sync: config.hold_cooldowns_for_sync&var.berserk_cd_remains<config.convoke_sync_window&!var.berserk_ready
+  hold_convoke_for_sync: config.hold_cooldowns_for_sync&var.cooldown_sync_window&!var.major_cooldowns_ready
+  
+  # Advanced cooldown synchronization logic
+  perfect_sync_available: var.berserk_ready&var.tigers_fury_ready&var.convoke_ready&config.sync_major_cooldowns
+  partial_sync_available: (var.berserk_ready&var.tigers_fury_ready)|(var.berserk_ready&var.convoke_ready)|(var.tigers_fury_ready&var.convoke_ready)
+  sync_window_active: var.berserk_up|var.tigers_fury_up|(var.cooldown_sync_window&config.hold_cooldowns_for_sync)
+  
+  # Energy dump timing for cooldown preparation
+  energy_dump_for_tigers_fury: var.energy_dump_needed&!var.tigers_fury_ready&var.tigers_fury_cd_remains<config.tiger_fury_prep_time
+  energy_dump_for_berserk: player.energy.pct>70&!var.berserk_ready&var.berserk_cd_remains<5&config.sync_major_cooldowns
+  energy_dump_for_sync: var.energy_dump_for_tigers_fury|var.energy_dump_for_berserk
+  
+  # Cooldown window optimization
+  major_cooldown_window: var.berserk_up|var.tigers_fury_up
+  optimal_cooldown_window: var.berserk_up&var.tigers_fury_up
+  convoke_window_active: var.major_cooldown_window&var.convoke_ready
+  
+  # Fight duration considerations for cooldown usage
+  fight_duration_short: fight_remains<=30
+  fight_duration_medium: fight_remains>30&fight_remains<=120
+  fight_duration_long: fight_remains>120
+  cooldown_usage_aggressive: var.fight_duration_short|!config.hold_cooldowns_for_sync
+  cooldown_usage_conservative: var.fight_duration_long&config.hold_cooldowns_for_sync
+  
+  # === ADDITIONAL BUFF TRACKING ===
+  # Prowl tracking (for Incarnation)
+  prowl_up: buff.prowl.up
+  prowl_available: spell.prowl.ready&var.berserk_up
+  
+  # Stealth detection for opener
+  stealth_active: buff.prowl.up|buff.shadowmeld.up|buff.stealth.up
+  opener_conditions_met: var.stealth_active&config.use_stealth_opener&time<=config.opener_flexibility_window
+  opener_timing_flexible: !config.opener_sequence_strict&var.stealth_active&time<=config.opener_flexibility_window
+  
+  # === TALENT-SPECIFIC LOGIC VARIABLES ===
+  # Incarnation: Avatar of Ashamane talent detection and replacement logic
+  incarnation_talented: talent.incarnation_avatar_of_ashamane.enabled
+  incarnation_active: buff.incarnation_avatar_of_ashamane.up
+  incarnation_ready: cooldown.incarnation_avatar_of_ashamane.ready
+  incarnation_cd_remains: cooldown.incarnation_avatar_of_ashamane.remains
+  
+  # Berserk replacement logic - use Incarnation when talented, otherwise Berserk
+  primary_berserk_spell: var.incarnation_talented
+  berserk_spell_active: buff.berserk.up|var.incarnation_active
+  berserk_spell_ready: cooldown.berserk.ready|var.incarnation_ready
+  berserk_spell_cd_remains: cooldown.berserk.remains+var.incarnation_cd_remains
+  
+  # Prowl usage during Incarnation windows - enhanced stealth mechanics
+  incarnation_prowl_window: var.incarnation_active
+  prowl_during_incarnation: var.incarnation_prowl_window&!var.prowl_up&spell.prowl.ready
+  incarnation_prowl_benefits: var.incarnation_active&var.prowl_up
+  
+  # Coiled to Spring talent interaction - overflow combo point mechanics
+  coiled_to_spring_active: talent.coiled_to_spring.enabled
+  coiled_to_spring_overflow: var.coiled_to_spring_active&var.overflow_combo_points
+  coiled_to_spring_benefit: var.coiled_to_spring_active&var.berserk_window_active&combo_points>5
+  coiled_to_spring_storage: var.coiled_to_spring_active&combo_points>=7
+  
+  # Druid of the Claw hero talent detection and Ravage proc priority
+  druid_of_claw_talented: talent.druid_of_the_claw.enabled
+  ravage_proc_active: var.ravage_up&var.druid_of_claw_talented
+  ravage_proc_priority_high: var.ravage_proc_active&var.ravage_stacks>=2
+  ravage_proc_priority_medium: var.ravage_proc_active&var.ravage_stacks=1
+  
+  # Ravage proc preservation logic - prevent munching with Ferocious Bite
+  ravage_munch_risk: var.ravage_up&var.rip_pandemic&combo_points>=5
+  ravage_preservation_needed: var.ravage_munch_risk&var.druid_of_claw_talented
+  ferocious_bite_to_preserve_ravage: var.ravage_preservation_needed&var.energy_available_ferocious_bite
+  
+  # Claw Rampage synergy during Berserk windows - additional Ravage generation
+  claw_rampage_window: var.berserk_window_active&var.druid_of_claw_talented
+  claw_rampage_ravage_generation: var.claw_rampage_window&var.ravage_stacks<3
+  claw_rampage_synergy_active: var.claw_rampage_window&var.berserk_up
+  claw_rampage_combo_efficiency: var.claw_rampage_synergy_active&combo_points>=3
+  
+  # Advanced Druid of the Claw mechanics
+  druid_of_claw_berserk_value: var.druid_of_claw_talented&var.berserk_window_active
+  ravage_stack_management: var.ravage_stacks>=2&var.druid_of_claw_talented
+  optimal_ravage_usage: var.ravage_proc_active&(var.berserk_up|combo_points<=3)
+  
+  # Talent adaptation priority logic
+  talent_priority_ravage: var.druid_of_claw_talented&var.ravage_proc_priority_high
+  talent_priority_incarnation: var.incarnation_talented&var.incarnation_ready
+  talent_priority_coiled_spring: var.coiled_to_spring_active&var.coiled_to_spring_benefit
+  
+  # === UTILITY AND DEFENSIVE VARIABLES ===
+  # Interrupt and utility spell integration
+  interrupt_ready: spell.skull_bash.ready|spell.mighty_bash.ready
+  interrupt_target_casting: target.casting&target.cast_time>0.5
+  interrupt_important_cast: target.casting.interruptible&(target.casting.school.shadow|target.casting.school.fire|target.casting.school.frost|target.casting.school.arcane)
+  interrupt_priority_cast: var.interrupt_important_cast&config.only_important_interrupts
+  interrupt_any_cast: target.casting.interruptible&!config.only_important_interrupts
+  interrupt_needed: config.auto_interrupts&var.interrupt_ready&(var.interrupt_priority_cast|var.interrupt_any_cast)&var.interrupt_target_casting
+  
+  # Interrupt timing and delay management
+  interrupt_delay_met: target.cast_time>config.interrupt_delay/1000
+  interrupt_safe_timing: var.interrupt_delay_met&target.cast_time>0.8
+  interrupt_emergency: target.cast_time<=1.0&var.interrupt_important_cast
+  interrupt_execute: var.interrupt_needed&(var.interrupt_safe_timing|var.interrupt_emergency)
+  
+  # Utility spell availability and conditions
+  cyclone_available: spell.cyclone.ready&!target.debuff.cyclone.up
+  entangling_roots_available: spell.entangling_roots.ready&!target.debuff.entangling_roots.up&!target.moving
+  hibernate_available: spell.hibernate.ready&target.classification.beast&!target.debuff.hibernate.up
+  soothe_available: spell.soothe.ready&target.enraged
+  
+  # Utility spell usage conditions
+  utility_cc_needed: target.casting&!var.interrupt_ready&(var.cyclone_available|var.entangling_roots_available)
+  utility_soothe_needed: var.soothe_available&target.enraged&target.enemy
+  utility_hibernate_needed: var.hibernate_available&target.classification.beast&target.enemy&!target.classification.boss
+  
+  # Defensive ability tracking and conditions
+  survival_instincts_ready: spell.survival_instincts.ready
+  barkskin_ready: spell.barkskin.ready
+  frenzied_regeneration_ready: spell.frenzied_regeneration.ready
+  renewal_ready: spell.renewal.ready&talent.renewal.enabled
+  
+  # Health thresholds for defensive usage
+  health_critical: player.health.pct<=25
+  health_low: player.health.pct<=40
+  health_moderate: player.health.pct<=60
+  health_emergency: player.health.pct<=15
+  
+  # Defensive usage conditions
+  survival_instincts_needed: var.health_critical&var.survival_instincts_ready
+  barkskin_needed: var.health_low&var.barkskin_ready&!buff.survival_instincts.up
+  frenzied_regen_needed: var.health_moderate&var.frenzied_regeneration_ready&!buff.frenzied_regeneration.up
+  renewal_needed: var.health_low&var.renewal_ready&!buff.frenzied_regeneration.up
+  emergency_heal_needed: var.health_emergency&(var.renewal_ready|var.frenzied_regeneration_ready)
+  
+  # Damage reduction and mitigation tracking
+  damage_reduction_active: buff.survival_instincts.up|buff.barkskin.up
+  damage_reduction_needed: var.health_low&!var.damage_reduction_active
+  healing_over_time_active: buff.frenzied_regeneration.up|buff.renewal.up
+  
+  # Advanced target switching and multi-target DoT maintenance
+  # Enhanced target switching logic beyond basic enemy detection
+  target_switch_beneficial: var.target_switching_available&enemies.without_debuff.rake.8y>0
+  target_switch_for_dots: var.target_switching_available&(var.rake_targets_missing>1|var.rip_targets_missing>1)
+  target_switch_priority: var.focus_high_priority&var.high_priority_targets>0&!target.classification.elite
+  
+  # Multi-target DoT spread and maintenance
+  rake_spread_targets: enemies.without_debuff.rake.8y
+  rip_spread_targets: enemies.without_debuff.rip.8y
+  dot_spread_priority: var.rake_spread_targets>=2|var.rip_spread_targets>=1
+  dot_maintenance_needed: var.dot_spread_needed&combo_points>=5
+  
+  # Target switching for optimal DoT coverage
+  switch_for_rake: var.rake_spread_targets>0&var.energy_available_rake&config.target_switching_enabled
+  switch_for_rip: var.rip_spread_targets>0&combo_points>=5&var.energy_available_rip&config.target_switching_enabled
+  switch_for_primal_wrath: var.rip_spread_targets>=2&combo_points>=5&var.energy_available_primal_wrath&config.target_switching_enabled
+  
+  # Advanced multi-target priority assessment
+  dot_coverage_complete: var.rake_spread_targets=0&var.rip_spread_targets=0
+  dot_coverage_partial: var.rake_spread_targets<=1&var.rip_spread_targets<=1
+  dot_coverage_poor: var.rake_spread_targets>=2|var.rip_spread_targets>=2
+  
+  # Target switching efficiency validation
+  target_switch_efficient: var.target_switching_available&var.dot_coverage_poor&var.aoe_situation
+  target_switch_worthwhile: var.target_switch_efficient&fight_remains>15
+  maintain_current_target: var.dot_coverage_complete|var.single_target_situation|!config.target_switching_enabled
+
+lists:
+  # Action lists will be implemented in subsequent tasks
+  # Placeholder structure to maintain valid YAML
+  main:
+    # === ROTATION STATE VALIDATION ===
+    # Return if rotation is not active or target is invalid
+    - return,if=!state.rotation
+    - return,if=!var.target_valid
+    
+    # === EMERGENCY AND HIGH-PRIORITY ACTIONS ===
+    # Immediate response to critical procs and situations
+    
+    # === UTILITY AND DEFENSIVE PRIORITY ACTIONS ===
+    # Highest priority: Emergency defensive responses
+    - call_action_list,name=defensive,if=var.health_emergency|var.survival_instincts_needed
+    
+    # High priority: Interrupt critical enemy casts
+    - call_action_list,name=utility,if=var.interrupt_needed&var.target_attackable
+    
+    # Apex Predator's Craving - highest priority across all scenarios
+    - ferocious_bite,if=var.apex_predators_craving_priority&var.energy_available_ferocious_bite&var.target_attackable
+    
+    # Emergency energy dump when at cap to prevent waste
+    - ferocious_bite,if=var.energy_cap_reached&combo_points>=5&var.energy_available_ferocious_bite&var.target_attackable
+    - rip,if=var.energy_cap_reached&combo_points>=5&var.rip_refresh_needed&var.energy_available_rip&var.target_attackable
+    - primal_wrath,if=var.energy_cap_reached&combo_points>=5&var.aoe_situation&var.rip_refresh_needed&var.energy_available_primal_wrath
+    
+    # Emergency combo point dump when at overflow risk
+    - ferocious_bite,if=combo_points>=5&var.energy_available_ferocious_bite&var.target_attackable&!var.berserk_window_active
+    
+    # === STEALTH OPENER SEQUENCE ===
+    # Execute optimized opener when stealth conditions are met
+    - call_action_list,name=opener,if=var.opener_conditions_met&config.use_stealth_opener
+    
+    # === TALENT-SPECIFIC HIGH-PRIORITY ACTIONS ===
+    # Druid of the Claw Ravage proc management during Berserk windows
+    - call_action_list,name=claw_rampage,if=var.claw_rampage_synergy_active&var.druid_of_claw_talented
+    
+    # Ravage proc preservation - prevent munching with immediate Ferocious Bite
+    - ferocious_bite,if=var.ravage_preservation_needed&var.combo_points_for_finisher&var.energy_available_ferocious_bite&var.target_attackable
+    
+    # High-priority Ravage usage when stacks are high
+    - ravage,if=var.talent_priority_ravage&var.energy_available_shred&var.target_attackable
+    
+    # === COOLDOWN MANAGEMENT SYSTEM ===
+    # Manage major cooldowns and synchronization
+    - call_action_list,name=cooldowns,if=var.target_attackable&fight_remains>10
+    
+    # === PRIORITY SYSTEM SELECTION ===
+    # Choose appropriate rotation based on enemy count and situation
+    
+    # Target switching and DoT maintenance for multi-target scenarios
+    - call_action_list,name=target_switching,if=var.target_switch_efficient&var.aoe_situation&config.target_switching_enabled
+    
+    # AoE priority when multiple enemies present
+    - call_action_list,name=aoe,if=var.aoe_priority_active&var.target_attackable
+    
+    # Single-target priority for focused damage
+    - call_action_list,name=single_target,if=var.single_target_priority_active&var.target_attackable
+    
+    # Cleave situation handling (2-3 enemies)
+    - call_action_list,name=single_target,if=var.cleave_situation&var.target_attackable
+    
+    # === EMERGENCY RESOURCE MANAGEMENT ===
+    # Handle critical resource situations when action lists don't cover them
+    
+    # Defensive abilities when health is low
+    - call_action_list,name=defensive,if=var.damage_reduction_needed|var.emergency_heal_needed
+    
+    # Utility spells for crowd control and enemy management
+    - call_action_list,name=utility,if=var.utility_cc_needed|var.utility_soothe_needed|var.utility_hibernate_needed
+    
+    # Emergency Tiger's Fury when energy starved
+    - tigers_fury,if=var.energy_starved&var.tigers_fury_ready&var.target_attackable
+    
+    # Emergency DoT application when missing on valid target
+    - rake,if=var.rake_missing&var.energy_available_rake&var.target_attackable
+    - rip,if=var.rip_missing&combo_points>=5&var.energy_available_rip&var.target_attackable
+    
+    # === FALLBACK ACTIONS ===
+    # Basic actions when no specific conditions are met
+    
+    # Combo point generation based on situation
+    - shred,if=var.single_target_situation&combo_points<5&var.energy_available_shred&var.target_attackable&!var.ravage_proc_active
+    - swipe,if=var.aoe_situation&combo_points<5&var.energy_available_swipe&var.target_attackable&!var.ravage_proc_active
+    
+    # Basic finisher usage
+    - ferocious_bite,if=combo_points>=5&var.energy_available_ferocious_bite&var.target_attackable&var.dots_active
+    
+    # Resource generation when low
+    - tigers_fury,if=var.tigers_fury_ready&player.energy.pct<=50&var.target_attackable
+    
+    # === FINAL FALLBACK ===
+    # Absolute last resort actions
+    - shred,if=var.energy_available_shred&var.target_attackable&combo_points<5
+    - wait,sec=0.1,if=player.energy<40&!var.tigers_fury_ready
+  
+  # Stealth opener action list - implements the optimized opener sequence
+  opener:
+    # Stealth detection and opener initiation conditions
+    - return,if=!config.use_stealth_opener
+    - return,if=!buff.prowl.up&!buff.shadowmeld.up&!buff.stealth.up&time>config.opener_flexibility_window
+    
+    # Step 1: Rake as first ability from stealth (Requirement 3.1)
+    - wait,sec=config.opener_rake_delay/1000,if=config.opener_rake_delay>0&buff.prowl.up
+    - rake,if=var.rake_missing&var.energy_available_rake&buff.prowl.up
+    - rake,if=var.rake_missing&var.energy_available_rake&(buff.shadowmeld.up|buff.stealth.up)
+    
+    # Step 2: Swipe to generate 5 Combo Points (Requirement 3.2)
+    - swipe,if=combo_points<5&var.energy_available_swipe&target.debuff.rake.up
+    
+    # Step 3: Incarnation and Tiger's Fury simultaneously at 5 CP (Requirement 3.3) - Incarnation builds
+    - incarnation_avatar_of_ashamane,if=var.incarnation_talented&combo_points>=5&var.incarnation_ready&var.tigers_fury_ready&target.debuff.rake.up
+    - tigers_fury,if=var.incarnation_talented&combo_points>=5&var.incarnation_active&var.tigers_fury_ready&target.debuff.rake.up
+    
+    # Step 3: Berserk and Tiger's Fury simultaneously at 5 CP (Requirement 3.3) - Non-Incarnation builds
+    - berserk,if=!var.incarnation_talented&combo_points>=5&var.berserk_ready&var.tigers_fury_ready&target.debuff.rake.up
+    - tigers_fury,if=!var.incarnation_talented&combo_points>=5&var.berserk_up&var.tigers_fury_ready&target.debuff.rake.up
+    
+    # Step 4: Primal Wrath to apply Rip (Requirement 3.4)
+    - primal_wrath,if=combo_points>=5&var.berserk_window_active&var.tigers_fury_up&var.energy_available_primal_wrath&var.rip_missing
+    
+    # Step 5: Convoke the Spirits (Requirement 3.5)
+    - convoke_the_spirits,if=var.convoke_ready&var.berserk_window_active&var.tigers_fury_up&target.debuff.rip.up
+    
+    # Step 6: Ferocious Bite after Convoke (Requirement 3.6)
+    - ferocious_bite,if=combo_points>=5&var.energy_available_ferocious_bite&var.berserk_window_active&cooldown.convoke_the_spirits.remains>0&target.debuff.rip.up
+    
+    # Step 7: Feral Frenzy to complete opener (Requirement 3.7)
+    - feral_frenzy,if=var.feral_frenzy_ready&var.berserk_window_active&target.debuff.rip.up&target.debuff.rake.up
+    
+    # === TALENT-SPECIFIC OPENER ENHANCEMENTS ===
+    # Use Prowl during Incarnation windows for enhanced stealth benefits
+    - prowl,if=var.incarnation_active&!var.prowl_up&spell.prowl.ready&buff.incarnation_avatar_of_ashamane.remains>8
+    
+    # Ravage proc usage during opener for Druid of the Claw
+    - ravage,if=var.ravage_proc_active&var.energy_available_shred&var.berserk_window_active&combo_points<=3
+    
+    # Berserk window behavior - alternation between finishers and builders (Requirement 3.8)
+    # During Berserk, alternate between Ferocious Bite at 5 CP and Swipe for generation
+    - ferocious_bite,if=var.berserk_window_active&combo_points>=5&var.energy_available_ferocious_bite&config.berserk_combo_alternation&!var.ravage_preservation_needed
+    - swipe,if=var.berserk_window_active&combo_points<5&var.energy_available_swipe&config.berserk_combo_alternation&!var.ravage_proc_active
+    
+    # Handle overflow combo points during Berserk (Requirement 3.8)
+    - ferocious_bite,if=var.overflow_combo_points&var.energy_available_ferocious_bite&config.berserk_overflow_management&!var.ravage_preservation_needed
+    - swipe,if=var.berserk_combo_buffer&var.energy_available_swipe&config.berserk_overflow_management&!var.ravage_proc_active
+    
+    # Coiled to Spring overflow handling during opener
+    - ferocious_bite,if=var.coiled_to_spring_storage&var.energy_available_ferocious_bite&var.berserk_window_active
+    
+    # Fallback to main rotation when opener conditions no longer apply
+    - call_action_list,name=main,if=!var.berserk_window_active&time>config.opener_flexibility_window&!var.opener_timing_flexible
+    
+  # Single-target priority system - implements optimized ST rotation
+  single_target:
+    # === APEX PREDATOR'S CRAVING PRIORITY (Requirement 4.1) ===
+    # Highest priority: Apex Predator's Craving proc - immediate Ferocious Bite
+    - ferocious_bite,if=var.apex_predators_craving_priority&var.energy_available_ferocious_bite
+    
+    # === DRUID OF THE CLAW RAVAGE PROC PRIORITY (Requirement 8.2) ===
+    # High priority: Ravage procs for Druid of the Claw builds
+    - ravage,if=var.talent_priority_ravage&var.energy_available_shred&var.target_attackable
+    - ravage,if=var.ravage_proc_priority_high&var.energy_available_shred&var.target_attackable
+    - ravage,if=var.optimal_ravage_usage&var.energy_available_shred&var.target_attackable
+    
+    # === RAVAGE PROC PRESERVATION LOGIC (Requirement 8.3) ===
+    # Use Ferocious Bite to prevent Ravage proc munching when Rip is in pandemic
+    - ferocious_bite,if=var.ferocious_bite_to_preserve_ravage&var.combo_points_for_finisher&var.target_attackable
+    - ferocious_bite,if=var.ravage_preservation_needed&combo_points>=5&var.energy_available_ferocious_bite
+    
+    # === DOT MANAGEMENT LOGIC (Requirements 4.2, 4.9) ===
+    # High priority: Rip missing or in pandemic with 5 combo points
+    - rip,if=var.rip_refresh_needed&var.combo_points_for_finisher&var.energy_available_rip&!var.ravage_preservation_needed
+    
+    # High priority: Rake missing or in pandemic
+    - rake,if=var.rake_refresh_needed&var.energy_available_rake
+    
+    # === FINISHER PRIORITY WITH ACTIVE DOTS (Requirement 4.3) ===
+    # Ferocious Bite at 5 combo points with active DoTs
+    - ferocious_bite,if=var.combo_points_for_finisher&var.dots_active&var.energy_available_ferocious_bite&!var.apex_predators_craving_up&!var.ravage_preservation_needed
+    
+    # === COILED TO SPRING OVERFLOW INTERACTIONS (Requirement 8.1) ===
+    # Handle overflow combo points with Coiled to Spring talent
+    - ferocious_bite,if=var.coiled_to_spring_storage&var.energy_available_ferocious_bite&var.target_attackable
+    - ferocious_bite,if=var.coiled_to_spring_benefit&combo_points>=7&var.energy_available_ferocious_bite
+    
+    # === PROC UTILIZATION LOGIC (Requirement 4.8) ===
+    # Sudden Ambush proc with active Rake - prioritize Shred
+    - shred,if=var.sudden_ambush_with_rake&var.energy_available_shred&!var.ravage_proc_active
+    
+    # Medium priority Ravage procs when other conditions aren't met
+    - ravage,if=var.ravage_proc_priority_medium&var.energy_available_shred&combo_points<=3&var.target_attackable
+    
+    # === DEFAULT COMBO POINT GENERATION (Requirement 4.10) ===
+    # Shred as default combo point generator for single-target
+    - shred,if=var.combo_generation_needed&var.energy_available_shred&!var.ravage_proc_active
+    - shred,if=combo_points<5&var.energy_available_shred&!var.combo_points_capped&!var.ravage_proc_active
+    
+  # AoE priority system - implements optimized AoE rotation
+  aoe:
+    # === APEX PREDATOR'S CRAVING PRIORITY (Requirement 5.1) ===
+    # Highest priority: Apex Predator's Craving proc - immediate Ferocious Bite
+    - ferocious_bite,if=var.apex_predators_craving_priority&var.energy_available_ferocious_bite
+    
+    # === DRUID OF THE CLAW RAVAGE PROC PRIORITY (Requirement 8.2) ===
+    # High priority: Ravage procs for Druid of the Claw builds in AoE
+    - ravage,if=var.talent_priority_ravage&var.energy_available_shred&var.target_attackable&var.aoe_situation
+    - ravage,if=var.ravage_proc_priority_high&var.energy_available_shred&var.target_attackable&var.enemies_in_range>=2
+    - ravage,if=var.optimal_ravage_usage&var.energy_available_shred&var.target_attackable&var.aoe_priority_active
+    
+    # === RAVAGE PROC PRESERVATION LOGIC (Requirement 8.3) ===
+    # Use Ferocious Bite to prevent Ravage proc munching when Rip is in pandemic
+    - ferocious_bite,if=var.ferocious_bite_to_preserve_ravage&var.combo_points_for_finisher&var.target_attackable
+    - ferocious_bite,if=var.ravage_preservation_needed&combo_points>=5&var.energy_available_ferocious_bite&var.aoe_situation
+    
+    # === AOE RIP APPLICATION LOGIC (Requirement 5.2) ===
+    # High priority: Primal Wrath for AoE Rip application when missing or in pandemic
+    - primal_wrath,if=var.rip_refresh_needed&var.combo_points_for_finisher&var.energy_available_primal_wrath&!var.ravage_preservation_needed
+    - primal_wrath,if=var.rip_missing&var.combo_points_for_finisher&var.energy_available_primal_wrath&var.aoe_situation&!var.ravage_preservation_needed
+    
+    # Apply Primal Wrath when multiple targets need Rip
+    - primal_wrath,if=var.rip_targets_missing>=2&var.combo_points_for_finisher&var.energy_available_primal_wrath&!var.ravage_preservation_needed
+    
+    # === AOE FINISHER PRIORITIES (Requirement 5.4) ===
+    # Ferocious Bite at 5 combo points with active Rip on primary target
+    - ferocious_bite,if=var.combo_points_for_finisher&target.debuff.rip.up&var.energy_available_ferocious_bite&!var.apex_predators_craving_up&!var.ravage_preservation_needed
+    
+    # Ferocious Bite when Rip is active and we have sufficient combo points
+    - ferocious_bite,if=var.combo_points_capped&var.dots_active&var.energy_available_ferocious_bite&var.aoe_situation&!var.ravage_preservation_needed
+    
+    # === COILED TO SPRING OVERFLOW INTERACTIONS (Requirement 8.1) ===
+    # Handle overflow combo points with Coiled to Spring talent in AoE
+    - ferocious_bite,if=var.coiled_to_spring_storage&var.energy_available_ferocious_bite&var.aoe_situation
+    - primal_wrath,if=var.coiled_to_spring_benefit&combo_points>=7&var.energy_available_primal_wrath&var.rip_targets_missing>=1
+    
+    # === RAKE APPLICATION FOR AOE ===
+    # Apply Rake to primary target when missing or in pandemic
+    - rake,if=var.rake_refresh_needed&var.energy_available_rake&var.target_attackable
+    
+    # Medium priority Ravage procs in AoE scenarios
+    - ravage,if=var.ravage_proc_priority_medium&var.energy_available_shred&combo_points<=3&var.target_attackable&var.aoe_situation
+    
+    # === SWIPE AS PRIMARY COMBO POINT GENERATOR (Requirement 5.8) ===
+    # Swipe as primary combo point generator for AoE scenarios
+    - swipe,if=var.combo_generation_needed&var.energy_available_swipe&var.aoe_situation&!var.ravage_proc_active
+    - swipe,if=combo_points<5&var.energy_available_swipe&var.enemies_in_swipe_range>=config.aoe_enemy_threshold&!var.ravage_proc_active
+    - swipe,if=var.combo_points_low&var.energy_available_swipe&var.aoe_priority_active&!var.ravage_proc_active
+    
+    # Swipe when we need combo points and have multiple enemies
+    - swipe,if=combo_points<4&var.energy_available_swipe&var.enemies_in_range>=2&!var.ravage_proc_active
+    
+    # === FALLBACK COMBO POINT GENERATION ===
+    # Use Swipe as default builder in AoE even at lower enemy counts for consistency
+    - swipe,if=combo_points<5&var.energy_available_swipe&var.cleave_situation&!var.ravage_proc_active
+    
+    # Emergency Shred if Swipe unavailable but still need combo points
+    - shred,if=combo_points<3&!spell.swipe.ready&var.energy_available_shred&var.target_attackable&!var.ravage_proc_active
+    
+  # Cooldown management and synchronization system
+  cooldowns:
+    # === TALENT-SPECIFIC COOLDOWN LOGIC ===
+    # Incarnation: Avatar of Ashamane replaces Berserk when talented
+    - incarnation_avatar_of_ashamane,if=var.incarnation_talented&var.convoke_sync_ready&var.energy_available_rake&var.target_attackable&fight_remains>30
+    - tigers_fury,if=var.incarnation_active&var.convoke_ready&var.energy_available_rake&var.target_attackable
+    - convoke_the_spirits,if=var.incarnation_active&var.tigers_fury_up&var.target_attackable&combo_points>=3
+    
+    # Prowl usage during Incarnation windows for enhanced stealth benefits
+    - prowl,if=var.prowl_during_incarnation&var.target_attackable&var.incarnation_active
+    - prowl,if=var.incarnation_active&!var.prowl_up&spell.prowl.ready&buff.incarnation_avatar_of_ashamane.remains>5
+    
+    # === MAJOR COOLDOWN SYNCHRONIZATION (Requirements 4.4, 5.5, 7.1, 7.2, 10.1) ===
+    # Synchronize Berserk + Tiger's Fury + Convoke when all available (non-Incarnation builds)
+    - berserk,if=!var.incarnation_talented&var.convoke_sync_ready&var.energy_available_rake&var.target_attackable&fight_remains>30
+    - tigers_fury,if=buff.berserk.up&var.convoke_ready&var.energy_available_rake&var.target_attackable&!var.incarnation_talented
+    - convoke_the_spirits,if=var.berserk_up&var.tigers_fury_up&var.target_attackable&combo_points>=3&!var.incarnation_talented
+    
+    # === ENERGY DUMP TIMING FOR TIGER'S FURY PREPARATION (Requirements 2.3, 4.5) ===
+    # Dump energy before Tiger's Fury when it's coming off cooldown soon
+    - ferocious_bite,if=var.energy_dump_needed&var.combo_points_for_finisher&var.energy_available_ferocious_bite&!var.tigers_fury_ready
+    - rip,if=var.energy_dump_needed&var.combo_points_for_finisher&var.rip_refresh_needed&var.energy_available_rip&!var.tigers_fury_ready
+    - rake,if=var.energy_dump_needed&var.rake_refresh_needed&var.energy_available_rake&!var.tigers_fury_ready
+    - shred,if=var.energy_dump_needed&combo_points<5&var.energy_available_shred&!var.tigers_fury_ready&var.single_target_situation
+    - swipe,if=var.energy_dump_needed&combo_points<5&var.energy_available_swipe&!var.tigers_fury_ready&var.aoe_situation
+    
+    # === INDEPENDENT COOLDOWN USAGE (Requirements 4.6, 4.7, 5.6, 5.7, 7.4) ===
+    # Feral Frenzy on cooldown - independent of other cooldowns
+    - feral_frenzy,if=var.feral_frenzy_ready&var.target_attackable&combo_points>=2&fight_remains>10
+    - feral_frenzy,if=var.feral_frenzy_ready&var.target_attackable&var.berserk_window_active&combo_points>=1
+    
+    # Tiger's Fury on cooldown when not holding for sync
+    - tigers_fury,if=var.tigers_fury_ready&!var.hold_tigers_fury_for_sync&var.target_attackable&player.energy.pct<=60
+    - tigers_fury,if=var.tigers_fury_ready&!config.sync_major_cooldowns&var.target_attackable&player.energy.pct<=60
+    - tigers_fury,if=var.tigers_fury_ready&var.berserk_spell_cd_remains>15&var.target_attackable&player.energy.pct<=60
+    
+    # Berserk/Incarnation on cooldown when not holding for sync
+    - incarnation_avatar_of_ashamane,if=var.incarnation_talented&var.incarnation_ready&!var.hold_berserk_for_sync&var.target_attackable&combo_points>=3&fight_remains>20
+    - incarnation_avatar_of_ashamane,if=var.incarnation_talented&var.incarnation_ready&!config.sync_major_cooldowns&var.target_attackable&combo_points>=3&fight_remains>20
+    - berserk,if=!var.incarnation_talented&var.berserk_ready&!var.hold_berserk_for_sync&var.target_attackable&combo_points>=3&fight_remains>20
+    - berserk,if=!var.incarnation_talented&var.berserk_ready&!config.sync_major_cooldowns&var.target_attackable&combo_points>=3&fight_remains>20
+    
+    # === CONVOKE OPTIMIZATION WITHIN COOLDOWN WINDOWS (Requirements 10.4, 10.5) ===
+    # Use Convoke when not holding for sync but other conditions are met
+    - convoke_the_spirits,if=var.convoke_ready&!var.hold_convoke_for_sync&var.target_attackable&combo_points>=2&fight_remains>8
+    - convoke_the_spirits,if=var.convoke_ready&!config.sync_major_cooldowns&var.target_attackable&combo_points>=2&fight_remains>8
+    
+    # Convoke during active cooldown windows for optimization
+    - convoke_the_spirits,if=var.convoke_ready&var.berserk_window_active&var.target_attackable&combo_points>=1
+    - convoke_the_spirits,if=var.convoke_ready&var.tigers_fury_up&var.target_attackable&combo_points>=2&!var.berserk_spell_ready
+    
+    # Emergency Convoke usage when fight is ending soon
+    - convoke_the_spirits,if=var.convoke_ready&var.target_attackable&fight_remains<=15&combo_points>=1
+    
+    # === COOLDOWN WINDOW OPTIMIZATION ===
+    # Optimize ability usage during major cooldown windows
+    - ferocious_bite,if=var.berserk_window_active&var.tigers_fury_up&combo_points>=5&var.energy_available_ferocious_bite&target.debuff.rip.up
+    - rip,if=var.berserk_window_active&var.tigers_fury_up&combo_points>=5&var.rip_refresh_needed&var.energy_available_rip
+    - primal_wrath,if=var.berserk_window_active&var.tigers_fury_up&combo_points>=5&var.rip_refresh_needed&var.aoe_situation&var.energy_available_primal_wrath
+    
+    # Generate combo points efficiently during cooldown windows
+    - shred,if=var.berserk_window_active&combo_points<5&var.energy_available_shred&var.single_target_situation
+    - swipe,if=var.berserk_window_active&combo_points<5&var.energy_available_swipe&var.aoe_situation
+    
+    # === EMERGENCY COOLDOWN USAGE ===
+    # Use cooldowns when fight is ending soon regardless of sync
+    - incarnation_avatar_of_ashamane,if=var.incarnation_talented&var.incarnation_ready&var.target_attackable&fight_remains<=20&combo_points>=2
+    - berserk,if=!var.incarnation_talented&var.berserk_ready&var.target_attackable&fight_remains<=20&combo_points>=2
+    - tigers_fury,if=var.tigers_fury_ready&var.target_attackable&fight_remains<=15&player.energy.pct<=80
+    - feral_frenzy,if=var.feral_frenzy_ready&var.target_attackable&fight_remains<=10
+  
+  # Claw Rampage synergy management for Druid of the Claw during Berserk windows
+  claw_rampage:
+    # === CLAW RAMPAGE SYNERGY DURING BERSERK WINDOWS (Requirement 8.4) ===
+    # Only execute this list when Druid of the Claw is talented and Berserk window is active
+    - return,if=!var.druid_of_claw_talented|!var.berserk_window_active
+    
+    # High priority: Use existing Ravage procs during Claw Rampage windows
+    - ravage,if=var.ravage_proc_priority_high&var.energy_available_shred&var.claw_rampage_synergy_active
+    - ravage,if=var.ravage_stacks>=2&var.energy_available_shred&var.claw_rampage_window
+    
+    # Generate additional Ravage procs through ability usage during Berserk
+    - ferocious_bite,if=var.claw_rampage_combo_efficiency&combo_points>=5&var.energy_available_ferocious_bite&var.ravage_stacks<3
+    - rip,if=var.claw_rampage_combo_efficiency&combo_points>=5&var.rip_refresh_needed&var.energy_available_rip&var.ravage_stacks<3
+    - primal_wrath,if=var.claw_rampage_combo_efficiency&combo_points>=5&var.aoe_situation&var.rip_refresh_needed&var.energy_available_primal_wrath&var.ravage_stacks<3
+    
+    # Combo point generation to fuel Claw Rampage synergy
+    - shred,if=var.claw_rampage_ravage_generation&combo_points<5&var.energy_available_shred&var.single_target_situation
+    - swipe,if=var.claw_rampage_ravage_generation&combo_points<5&var.energy_available_swipe&var.aoe_situation
+    
+    # Medium priority Ravage usage when stacks are building
+    - ravage,if=var.ravage_proc_priority_medium&var.energy_available_shred&var.claw_rampage_window&combo_points<=3
+    
+    # Maintain DoTs during Claw Rampage windows for optimal damage
+    - rake,if=var.rake_refresh_needed&var.energy_available_rake&var.claw_rampage_window
+    
+    # Emergency Ravage usage to prevent waste
+    - ravage,if=var.ravage_up&var.ravage_remains<=3&var.energy_available_shred&var.claw_rampage_window
+  
+  # Utility and interrupt management system
+  utility:
+    # === INTERRUPT PRIORITY (Requirement 9.7) ===
+    # Highest priority: Emergency interrupts for critical casts
+    - skull_bash,if=var.interrupt_emergency&spell.skull_bash.ready&var.target_attackable
+    - mighty_bash,if=var.interrupt_emergency&spell.mighty_bash.ready&var.target_attackable&!spell.skull_bash.ready
+    
+    # Standard interrupt timing with delay consideration
+    - skull_bash,if=var.interrupt_execute&spell.skull_bash.ready&var.target_attackable
+    - mighty_bash,if=var.interrupt_execute&spell.mighty_bash.ready&var.target_attackable&!spell.skull_bash.ready
+    
+    # === UTILITY SPELL INTEGRATION (Requirement 9.7) ===
+    # Crowd control when interrupts are unavailable
+    - cyclone,if=var.utility_cc_needed&var.cyclone_available&var.target_attackable&!var.interrupt_ready
+    - entangling_roots,if=var.utility_cc_needed&var.entangling_roots_available&var.target_attackable&!var.interrupt_ready&!var.cyclone_available
+    
+    # Specialized utility spells
+    - soothe,if=var.utility_soothe_needed&var.target_attackable
+    - hibernate,if=var.utility_hibernate_needed&var.target_attackable&!target.classification.boss
+    
+    # === UTILITY SPELL USAGE CONDITIONS ===
+    # Remove enrage effects that increase enemy damage
+    - soothe,if=target.enraged&spell.soothe.ready&var.target_attackable&target.enemy
+    
+    # Crowd control dangerous non-boss enemies
+    - cyclone,if=target.casting&target.cast_time>2&spell.cyclone.ready&var.target_attackable&!target.classification.boss&!var.interrupt_ready
+    - entangling_roots,if=target.moving&target.distance>5&spell.entangling_roots.ready&var.target_attackable&!target.classification.boss
+    
+    # Beast-specific crowd control
+    - hibernate,if=target.classification.beast&target.enemy&spell.hibernate.ready&var.target_attackable&!target.classification.boss&target.health.pct>50
+  
+  # Defensive ability usage system
+  defensive:
+    # === EMERGENCY DEFENSIVE RESPONSES (Requirement 9.8) ===
+    # Highest priority: Emergency healing when critically low
+    - renewal,if=var.health_emergency&var.renewal_ready
+    - frenzied_regeneration,if=var.health_emergency&var.frenzied_regeneration_ready&!var.renewal_ready
+    
+    # Critical health damage reduction
+    - survival_instincts,if=var.survival_instincts_needed
+    - barkskin,if=var.health_critical&var.barkskin_ready&!buff.survival_instincts.up
+    
+    # === PROACTIVE DEFENSIVE USAGE (Requirement 9.8) ===
+    # Damage reduction when health is low
+    - survival_instincts,if=var.health_low&var.survival_instincts_ready&!var.damage_reduction_active&incoming_damage_5s>player.health*0.4
+    - barkskin,if=var.barkskin_needed&incoming_damage_3s>player.health*0.3
+    
+    # Healing over time when moderately injured
+    - frenzied_regeneration,if=var.frenzied_regen_needed&!var.healing_over_time_active
+    - renewal,if=var.renewal_needed&!var.healing_over_time_active&!buff.frenzied_regeneration.up
+    
+    # === DEFENSIVE ABILITY COMBINATIONS ===
+    # Stack damage reduction when facing heavy damage
+    - barkskin,if=buff.survival_instincts.up&var.health_low&var.barkskin_ready&incoming_damage_3s>player.health*0.5
+    
+    # Use healing abilities during damage reduction windows
+    - frenzied_regeneration,if=buff.survival_instincts.up&var.health_moderate&var.frenzied_regeneration_ready
+    - renewal,if=var.damage_reduction_active&var.health_low&var.renewal_ready
+    
+    # === PREVENTIVE DEFENSIVE MEASURES ===
+    # Use defensives before taking predictable damage
+    - survival_instincts,if=target.casting&target.cast_time>2&spell_damage_prediction>player.health*0.6&var.survival_instincts_ready
+    - barkskin,if=target.casting&target.cast_time>1.5&spell_damage_prediction>player.health*0.4&var.barkskin_ready&!buff.survival_instincts.up
+  
+  # Target switching and multi-target DoT maintenance system
+  target_switching:
+    # === TARGET SWITCHING FOR DOT MAINTENANCE (Requirement 11.5) ===
+    # Switch targets to apply missing Rake
+    - rake,target=enemies.without_debuff.rake.8y.first,if=var.switch_for_rake&var.target_switch_worthwhile&var.dot_maintenance_priority
+    - rake,target=enemies.without_debuff.rake.8y.lowest_health,if=var.switch_for_rake&var.target_switch_beneficial&config.dot_spread_priority
+    
+    # Switch targets to apply missing Rip with Primal Wrath
+    - primal_wrath,target=enemies.without_debuff.rip.8y.first,if=var.switch_for_primal_wrath&var.target_switch_worthwhile&var.dot_maintenance_priority
+    
+    # Switch targets to apply single-target Rip when Primal Wrath unavailable
+    - rip,target=enemies.without_debuff.rip.8y.first,if=var.switch_for_rip&var.target_switch_worthwhile&!spell.primal_wrath.ready&var.dot_maintenance_priority
+    
+    # === PRIORITY TARGET SWITCHING (Requirement 11.5) ===
+    # Switch to high-priority targets (elites, rares, bosses)
+    - rake,target=enemies.classification.elite.without_debuff.rake.8y.first,if=var.target_switch_priority&var.energy_available_rake
+    - rip,target=enemies.classification.elite.without_debuff.rip.8y.first,if=var.target_switch_priority&combo_points>=5&var.energy_available_rip
+    
+    # Switch to rare enemies for DoT application
+    - rake,target=enemies.classification.rare.without_debuff.rake.8y.first,if=var.focus_high_priority&var.energy_available_rake
+    - rip,target=enemies.classification.rare.without_debuff.rip.8y.first,if=var.focus_high_priority&combo_points>=5&var.energy_available_rip
+    
+    # === MULTI-TARGET DOT SPREAD OPTIMIZATION (Requirement 11.5) ===
+    # Spread Rake to multiple targets when energy allows
+    - rake,target=enemies.without_debuff.rake.8y.highest_health,if=var.dot_spread_priority&var.energy_available_rake&var.aoe_situation
+    - rake,target=enemies.without_debuff.rake.8y.second,if=var.rake_spread_targets>=2&var.energy_available_rake&player.energy>=70
+    
+    # Spread Rip efficiently with Primal Wrath when multiple targets need it
+    - primal_wrath,if=var.rip_spread_targets>=3&combo_points>=5&var.energy_available_primal_wrath&var.aoe_situation
+    - primal_wrath,if=var.dot_maintenance_needed&var.aoe_situation&var.energy_available_primal_wrath
+    
+    # Individual Rip application when Primal Wrath is inefficient
+    - rip,target=enemies.without_debuff.rip.8y.highest_health,if=var.rip_spread_targets=1&combo_points>=5&var.energy_available_rip
+    
+    # === DOT MAINTENANCE ACROSS MULTIPLE TARGETS ===
+    # Maintain existing DoTs on multiple targets during pandemic windows
+    - rake,target=enemies.debuff.rake.pandemic.8y.first,if=var.aoe_situation&var.energy_available_rake&var.rake_spread_targets<=1
+    - rip,target=enemies.debuff.rip.pandemic.8y.first,if=var.aoe_situation&combo_points>=5&var.energy_available_rip&var.rip_spread_targets<=1
+    
+    # Refresh DoTs on multiple targets when resources allow
+    - primal_wrath,if=enemies.debuff.rip.pandemic.8y>=2&combo_points>=5&var.energy_available_primal_wrath&var.aoe_situation
+    
+    # === TARGET SWITCHING EFFICIENCY VALIDATION ===
+    # Return to primary target when DoT coverage is complete
+    - return,if=var.dot_coverage_complete&var.maintain_current_target
+    
+    # Continue target switching when coverage is poor and beneficial
+    - call_action_list,name=target_switching,if=var.dot_coverage_poor&var.target_switch_efficient&fight_remains>10

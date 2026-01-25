@@ -1,4 +1,9 @@
 version: 3
+author: munkey
+class: Priest
+spec: Discipline
+name: Discipline
+description: This is a basic rotation for Discipline Priest
 entry: main
 morphs:
   smite: void_blast
@@ -147,7 +152,8 @@ config:
 
 variables:
   use_af: player.moving.time>=config.angelic_feather_movement_time&buff.angelic_feather.down&((!player.combat&config.angelic_feather_usage=3|4)|(player.combat&config.angelic_feather_usage=2|4))
-  missing_atonement: group.in_range_40-group.buff.atonement.count
+  missing_atonement: group.count(buff.atonement.down&range<=40)>0
+  missing_pwf: group.count(buff.power_word_fortitude.down&range<=40)>0
   trinket1_living_silk: trinket_1.id=242393
   trinket2_living_silk: trinket_2.id=242393
   trinket_living_silk: var.trinket1_living_silk|var.trinket2_living_silk
@@ -175,17 +181,18 @@ lists:
     - desperate_prayer,if=health.pct<config.desperate_prayer_threshold
     - penance,cycle=members,if=health.pct<config.MO_penance_treshold&!var.hold_penance
   mouseover_friendly:
-    - pain_suppression.mouseover,if=config.MO_pain_suppression&mouseover.health<config.pain_suppression_threshold&mouseover.buff.remains(pain_suppression)=0
+    - pain_suppression.mouseover,if=config.MO_pain_suppression&mouseover.health.pct<config.pain_suppression_threshold&mouseover.buff.remains(pain_suppression)=0
     - penance.mouseover,if=config.MO_penance&mouseover.health.pct<config.MO_penance_treshold
-    - flash_heal.mouseover,if=config.MO_flash_heal&mouseover.health.pct<config.MO_flash_heal_treshold
+    - flash_heal.mouseover,if=config.MO_flash_heal&mouseover.range&mouseover.health.pct<config.MO_flash_heal_treshold
   mouseover_enemy:
-    - shadow_word_pain.mouseover,if=config.MO_shadow_word_pain&mouseover.enemy&mouseover.alive&mouseover.debuff.remains(shadow_word_pain)<=0
+    - shadow_word_pain.mouseover,if=config.MO_shadow_word_pain&mouseover.enemy&mouseover.alive&mouseover.debuff.shadow_word_pain
   trinkets:
     - call_action_list,name=living_silk,if=var.trinket_living_silk
   moving:
     - penance,cycle=members,if=health.pct<70&!var.hold_penance
     - power_word_shield,cycle=members,if=!buff.power_word_shield.up&!buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
     - power_word_shield,cycle=members,if=!buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield,target=lowest,if=var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
     - flash_heal,cycle=members,if=!buff.atonement.up&var.surge_of_light_procced
     - flash_heal,cycle=members,if=var.surge_of_light_procced
   pain_suppression_logic:
@@ -195,16 +202,19 @@ lists:
   atonement_spread:
     - evangelism.player,if=var.missing_atonement>1
     - power_word_radiance.player,if=var.missing_atonement>1,delay=100
-    - power_word_shield,cycle=members,if=!buff.power_word_shield.up&!buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,cycle=members,if=!buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - flash_heal,cycle=members,if=!buff.atonement.up&var.surge_of_light_procced
-    - plea,cycle=members,if=!buff.atonement.up
+    - penance,cycle=members,if=range<=40&cycle.buff.atonement.down
+    - power_word_shield,cycle=members,if=range<=40&!buff.power_word_shield.up&!buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield,cycle=members,if=range<=40&!buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield,target=lowest,if=range<=40&var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
+    - flash_heal,cycle=members,if=range<=40&!buff.atonement.up&var.surge_of_light_procced
+    - plea,cycle=members,if=range<=40&!buff.atonement.up
   main:
-    - return,if=mounted|!rotation_enabled
+    - return,if=mounted|!rotation_enabled|state.blocked_inputs
     - call_action_list,name=spell_queue
     - call_action_list,name=out_of_combat
     - angelic_feather.player,if=var.use_af
-    - shadow_word_pain.mouseover,if=config.MO_shadow_word_pain&mouseover.enemy&mouseover.alive&mouseover.debuff.remains(shadow_word_pain)<=0&config.allow_pull_with_mo    
+    - power_word_fortitude.player,if=var.missing_pwf
+    - shadow_word_pain.mouseover,if=config.MO_shadow_word_pain&mouseover.enemy&mouseover.alive&mouseover.debuff.shadow_word_pain&config.allow_pull_with_mo    
     - target_mouseover,if=config.allow_pull_with_mo&!target.exists&mouseover.enemy
     - return,if=!player.combat&active_enemies=0
     - target_enemy,if=!target.exists&config.auto_targeting
