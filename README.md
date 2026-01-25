@@ -85,7 +85,7 @@ Please ensure any contributions maintain our philosophy of real-world optimizati
 - Mouseover macros recommended for optimal functionality
 
 ## Support
-For questions, bug reports, or feature requests, please check the individual specialization README files first, as they contain detailed troubleshooting information and known issues.
+For questions, bug reports, or feature requests, please check the individual specialization README files first, as they contain detailed troubleshooting information and known issues. Preferably reports are done on the github repository to make tracking easier and also public visibility of progress.
 
 ---
 
