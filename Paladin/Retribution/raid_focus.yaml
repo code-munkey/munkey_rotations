@@ -64,9 +64,10 @@ lists:
     - call_action_list,name=interrupts,if=var.should_interrupt
     - return,if=!player.combat|!target.valid|target.range>10
     - call_action_list,name=sanity_checks
-    - call_action_list,name=auto_heal
+    - healthstone,if=health.pct<config.healthstone&healthstone.ready
+    - health_potion,if=health.pct<config.healthpotion&health_potion.ready
     - avenging_wrath,if=!talent.radiant_glory
-    - combat_potion,if=buff.avenging_wrath.up&player.inraid
+    - combat_potion,if=buff.avenging_wrath.up&player.inraid&combat_potion.ready
     - trinket_1,if=trinket_1.ready
     - trinket_2,if=trinket_2.ready
     - call_action_list,name=st_opener,if=active_enemies=1&!var.opener_complete
