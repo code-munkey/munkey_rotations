@@ -141,7 +141,7 @@ lists:
   main:
     - return,if=!state.rotation|state.blocked_inputs
     - call_action_list,name=auto_res_ooc,if=config.auto_res_ooc&!player.combat
-    - call_action_list,name=smart_aura
+    #- call_action_list,name=smart_aura
     - return,if=player.mounted
     - call_action_list,name=beacons
     - return,if=!player.combat

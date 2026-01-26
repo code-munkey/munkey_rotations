@@ -5,6 +5,10 @@ Real-life optimized rotations for World of Warcraft that go beyond simple priori
 *** PLEASE NOTE THAT SOME FEATURES / ROTATIONS MAY REQUIRE THE MUNKEY ROTATIONS ADDON INSIDE THE ADDON FOLDER ***
 *** IF YOU EXPERIENCE ANY ISSUES PLEASE DOWNLOAD THE ADDON AND TRY AGAIN BEFORE REPORTING THEM ***
 
+## Feature Requests and bugs
+Submit bug reports, requests for new toggles / features or supported class here:
+**https://munkey.fdback.io/**
+
 ## Quick Links
 - 🚀 [Getting Started](#getting-started)
 - 🐛 [Bug Report Template](BUG_REPORT_EXAMPLE.md)
