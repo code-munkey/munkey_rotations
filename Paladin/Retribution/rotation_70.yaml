@@ -6,14 +6,55 @@ morphs:
     judgment: hammer_of_wrath
 
 config:
+  wog_usage:
+    label: "Word of Glory HP%"
+    type: slider
+    default: 30
+    min: 0
+    max: 100
+  loh_usage:
+    label: "Lay on Hands HP%"
+    type: slider
+    default: 30
+    min: 0
+    max: 100
+  bop_usage:
+    label: "Blessing of Protection HP%"
+    type: slider
+    default: 30
+    min: 0
+    max: 100
+  ds_usage:
+    label: "Divine Shield HP%"
+    type: slider
+    default: 30
+    min: 0
+    max: 100
+  dp_usage:
+    label: "Divine Protection HP%"
+    type: slider
+    default: 70
+    min: 0
+    max: 100
 
 variables:
   should_interrupt: target.casting.important|target.channeling.important
   is_templar: talent.lights_guidance
   is_herald: talent.dawnlight
   opener_complete: combat.time>gcd*7
+  mo_is_resurrectable: mouseover.friendly&mouseover.dead&mouseover.range<=40
 
 lists:
+  smart_auras:
+    - crusader_aura.player,if=player.mounted&buff.crusader_aura.down.any
+    - devotion_aura.player,if=buff.devotion_aura.down.any&!player.mounted
+    - concentration_aura.player,if=buff.concentration_aura.down.any&!buff.devotion_aura.mine&!player.mounted
+  emergency_healing:
+    - divine_protection,if=config.dp_usage>0&health.pct<=config.dp_usage&cooldown.divine_protection.ready
+    - word_of_glory,if=config.wog_usage>0&health.pct<=config.wog_usage&cooldown.word_of_glory.ready
+    - lay_on_hands,if=debuff.forbearance.down&config.loh_usage>0&health.pct<=config.loh_usage&cooldown.lay_on_hands.ready
+    - blessing_of_protection,if=debuff.forbearance.down&config.bop_usage>0&health.pct<=config.bop_usage&cooldown.blessing_of_protection.ready
+    - divine_shield,if=debuff.forbearance.down&config.ds_usage>0&health.pct<=config.ds_usage&cooldown.divine_shield.ready
   interrupts:
     - rebuke,if=!target.casting.important&!target.interrupt_immune
   st_opener:
@@ -60,12 +101,13 @@ lists:
     - final_verdict,if=buff.empyrean_legacy.up
     - divine_storm
   main:
+    - call_action_list,name=smart_auras
     - return,if=!state.rotation|state.blocked_inputs|player.mounted|dead
     - call_action_list,name=interrupts,if=var.should_interrupt
     - return,if=!player.combat|!target.valid|target.range>10
-    - call_action_list,name=sanity_checks
     - healthstone,if=health.pct<config.healthstone&healthstone.ready
     - health_potion,if=health.pct<config.healthpotion&health_potion.ready
+    - intercession.mouseover,if=var.mo_is_resurrectable
     - avenging_wrath,if=!talent.radiant_glory
     - combat_potion,if=buff.avenging_wrath.up&player.inraid&combat_potion.ready
     - trinket_1,if=trinket_1.ready
