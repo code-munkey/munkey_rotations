@@ -45,10 +45,6 @@ variables:
   mo_is_resurrectable: mouseover.friendly&mouseover.dead&mouseover.range<=40
 
 lists:
-  smart_auras:
-    - crusader_aura.player,if=player.mounted&buff.crusader_aura.down.any
-    - devotion_aura.player,if=buff.devotion_aura.down.any&!player.mounted
-    - concentration_aura.player,if=buff.concentration_aura.down.any&!buff.devotion_aura.mine&!player.mounted
   emergency_healing:
     - divine_protection,if=config.dp_usage>0&health.pct<=config.dp_usage&cooldown.divine_protection.ready
     - word_of_glory,if=config.wog_usage>0&health.pct<=config.wog_usage&cooldown.word_of_glory.ready
@@ -101,7 +97,7 @@ lists:
     - final_verdict,if=buff.empyrean_legacy.up
     - divine_storm
   main:
-    - call_action_list,name=smart_auras
+    #- call_action_list,name=smart_auras
     - return,if=!state.rotation|state.blocked_inputs|player.mounted|dead
     - call_action_list,name=interrupts,if=var.should_interrupt
     - return,if=!player.combat|!target.valid|target.range>10

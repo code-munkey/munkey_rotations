@@ -99,9 +99,9 @@ lists:
     - ressurect,cycle=members,if=cycle.dead&var.dead_members=1
     - absolution,if=var.dead_members>1
   mouseover:
-    - lay_on_hands.mouseover,if=mouseover.alive&config.loh_mouseover&mouseover.health.pct<config.loh_mo_treshold&mouseover.range<=40
-    - blessing_of_sacrifice.mouseover,if=mouseover.alive&config.bos_mouseover&mouseover.health.pct<config.bos_mouseover_treshold&mouseover.range<=40
-    - blessing_of_protection.mouseover,if=mouseover.alive&config.bop_mouseover&mouseover.health.pct<config.bop_mouseover_treshold&mouseover.range<=40
+    # - lay_on_hands.mouseover,if=mouseover.alive&config.loh_mouseover&mouseover.health.pct<config.loh_mo_treshold&mouseover.range<=40
+    # - blessing_of_sacrifice.mouseover,if=mouseover.alive&config.bos_mouseover&mouseover.health.pct<config.bos_mouseover_treshold&mouseover.range<=40
+    # - blessing_of_protection.mouseover,if=mouseover.alive&config.bop_mouseover&mouseover.health.pct<config.bop_mouseover_treshold&mouseover.range<=40
     - intercession.mouseover,if=mouseover.range<=40&mouseover.dead
   living_silk:
     - trinket_1,if=var.trinket1_living_silk&trinket_1.cd=0&config.living_silk_usage!=3&((config.living_silk_usage=1)|var.living_silk_treshold_trigger)
@@ -111,7 +111,7 @@ lists:
     - beacon_of_faith.mouseover,if=mouseover.buff.remains(beacon_of_light)=0&mouseover.buff.remains(beacon_of_faith)=0&group.count(cycle.buff.beacon_of_faith.up)=0
   spenders:
     - shield_of_the_righteous,if=group.count(cycle.health.pct>95)=var.group_members
-    - eternal_flame,cycle=members,if=var.should_use_eternal_flame
+    - eternal_flame,cycle=members,if=var.should_use_eternal_flame&cycle.range<40
     - light_of_dawn.player,if=var.should_use_light_of_dawn
   smart_aura:
     - crusader_aura.player,if=player.mounted&buff.crusader_aura.down
@@ -127,26 +127,26 @@ lists:
     - avenging_wrath
     - aura_mastery,if=var.group_members=5&group.count(cycle.health.pct<70)>=3 # Cast aura mastery if 5 players have less than 70% health and grp size is 5
     - aura_mastery,if=var.group_members>5&group.count(cycle.health.pct<70)>=10 # Cast aura mastery if more than 5 players have less than 70% health and grp size is more than 5
-    - eternal_flame,cycle=members,if=var.emp_legacy_procc # Cast eternal flame if emp. legacy procc
+    - eternal_flame,cycle=members,if=var.emp_legacy_procc&cycle.range<40 # Cast eternal flame if emp. legacy procc
     - call_action_list,name=spenders,if=holy_power=5|buff.divine_purpose.up|(holy_power=4&buff.infusion_of_light.up) # Cast spender if we have 5 holy power, Divine Purpose is up, or we have 4 holy power and Infusion of Light is up
     - divine_toll,if=holy_power>=2&group.count(cycle.health.pct<80)=0 # Cast divine toll if we have less than or equal to 2 holy power and no players have less than 80% health
-    - divine_toll,cycle=members,if=player.holy_power>=2&cycle.health.pct<80 # Cast divine toll on lowest if we have less than or equal to2 holy power
-    - holy_light,cycle=members,if=cycle.health.pct<60&player.mana.pct<30&cooldown.holy_shock.charges=0&holy_power<=2 # Cast holy light if we have less than 2 holy power, 60% or less health, and 30% or less mana
+    - divine_toll,cycle=members,if=player.holy_power>=2&cycle.range<40&cycle.health.pct<80 # Cast divine toll on lowest if we have less than or equal to2 holy power
+    - holy_light,cycle=members,if=!player.moving&cycle.range<40&cycle.health.pct<60&player.mana.pct<30&cooldown.holy_shock.charges=0&holy_power<=2 # Cast holy light if we have less than 2 holy power, 60% or less health, and 30% or less mana
     - holy_shock,if=cooldown.holy_shock.charges=2&var.all_healthy # Cast holy shock if we have 2 holy power charges
-    - holy_shock,cycle=members,if=cooldown.holy_shock.charges=2 # Cast holy shock if we have 2 holy power charges
+    - holy_shock,cycle=members,if=cooldown.holy_shock.charges=2&cycle.range<40 # Cast holy shock if we have 2 holy power charges
     - judgment # Cast judgment as filler
     - holy_shock,if=var.all_healthy # Cast holy shock as filler
-    - holy_shock,cycle=members # Cast holy shock if we have 2 holy power charges
-    - flash_of_light,target=lowest,if=group.count(cycle.health.pct<90)>=1 # Cast flash of light as filler
+    - holy_shock,cycle=members,if=cycle.range<40 # Cast holy shock if we have 2 holy power charges
+    - flash_of_light,target=lowest,if=!player.moving&group.count(cycle.health.pct<90)>=1 # Cast flash of light as filler
   main:
     - return,if=!state.rotation|state.blocked_inputs
     - call_action_list,name=auto_res_ooc,if=config.auto_res_ooc&!player.combat
     #- call_action_list,name=smart_aura
     - return,if=player.mounted
-    - call_action_list,name=beacons
+    #- call_action_list,name=beacons
     - return,if=!player.combat
-    - blessing_of_freedom,if=player.rooted
-    - call_action_list,name=mouseover,if=mouseover.exists&mouseover.friendly
+    #- blessing_of_freedom,if=player.rooted
+    #- call_action_list,name=mouseover,if=mouseover.exists&mouseover.friendly
     - divine_protection,if=player.stunned&player.health.pct<=35
     - call_action_list,name=living_silk,if=var.trinket_living_silk
     - call_action_list,name=combat

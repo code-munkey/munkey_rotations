@@ -152,8 +152,9 @@ config:
 
 variables:
   use_af: player.moving.time>=config.angelic_feather_movement_time&buff.angelic_feather.down&((!player.combat&config.angelic_feather_usage=3|4)|(player.combat&config.angelic_feather_usage=2|4))
-  missing_atonement: group.count(buff.atonement.down&range<=40)>0
-  missing_pwf: group.count(buff.power_word_fortitude.down&range<=40)>0
+  missing_atonement: group.count(cycle.buff.atonement.down&cycle.range<=40)
+  missing_pwf: group.count(cycle.buff.power_word_fortitude.down&cycle.range>0)>0
+  friendly_and_valid_mo: mouseover.exists&mouseover.alive&mouseover.friendly&mouseover.range>0&mouseover.range<=40
   trinket1_living_silk: trinket_1.id=242393
   trinket2_living_silk: trinket_2.id=242393
   trinket_living_silk: var.trinket1_living_silk|var.trinket2_living_silk
@@ -167,8 +168,8 @@ lists:
     - trinket_1,if=var.trinket1_living_silk&trinket_1.cd=0&config.living_silk_usage!=3&((config.living_silk_usage=1)|var.living_silk_treshold_trigger)
     - trinket_2,if=var.trinket2_living_silk&trinket_2.cd=0&config.living_silk_usage!=3&((config.living_silk_usage=1)|var.living_silk_treshold_trigger)
   out_of_combat:
-    - penance,cycle=members,if=health.pct<config.OOC_penance_treshold&!player.combat
-    - flash_heal,cycle=members,if=health.pct<config.OOC_flash_heal_treshold&!player.combat
+    - penance,cycle=members,if=cycle.health.pct<config.OOC_penance_treshold&!player.combat
+    - flash_heal,cycle=members,if=cycle.health.pct<config.OOC_flash_heal_treshold&!player.combat
   offensive:
     - shadow_word_pain,if=debuff.shadow_word_pain.remains<=0
     - penance,if=cooldown.penance.charges=2|buff.power_of_the_dark_side.up|!cooldown.mind_blast.ready
@@ -189,40 +190,38 @@ lists:
   trinkets:
     - call_action_list,name=living_silk,if=var.trinket_living_silk
   moving:
-    - penance,cycle=members,if=health.pct<70&!var.hold_penance
-    - power_word_shield,cycle=members,if=!buff.power_word_shield.up&!buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,cycle=members,if=!buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - penance,cycle=members,if=cycle.health.pct<70&!var.hold_penance
+    - power_word_shield,cycle=members,if=!cycle.buff.power_word_shield.up&!cycle.buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield,cycle=members,if=!cycle.buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
     - power_word_shield,target=lowest,if=var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
-    - flash_heal,cycle=members,if=!buff.atonement.up&var.surge_of_light_procced
+    - flash_heal,cycle=members,if=!cycle.buff.atonement.up&var.surge_of_light_procced
     - flash_heal,cycle=members,if=var.surge_of_light_procced
   pain_suppression_logic:
-    - pain_suppression,cycle=tanks,if=config.pain_suppression_usage!=0&health.pct<config.pain_suppression_threshold
-    - pain_suppression,cycle=healers,if=config.pain_suppression_usage<1&health.pct<config.pain_suppression_threshold
-    - pain_suppression,cycle=members,if=config.pain_suppression_usage<2&health.pct<config.pain_suppression_threshold
+    - pain_suppression,name="PS Tanks",cycle=tanks,if=config.pain_suppression_usage!=0&cycle.health.pct<config.pain_suppression_threshold
+    - pain_suppression,name="PS Healers",cycle=healers,if=config.pain_suppression_usage>=2&cycle.health.pct<config.pain_suppression_threshold
+    - pain_suppression,name="PS DPS",cycle=members,if=config.pain_suppression_usage=3&cycle.health.pct<config.pain_suppression_threshold
   atonement_spread:
-    - evangelism.player,if=var.missing_atonement>1
-    - power_word_radiance.player,if=var.missing_atonement>1,delay=100
-    - penance,cycle=members,if=range<=40&cycle.buff.atonement.down
-    - power_word_shield,cycle=members,if=range<=40&!buff.power_word_shield.up&!buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,cycle=members,if=range<=40&!buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,target=lowest,if=range<=40&var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
-    - flash_heal,cycle=members,if=range<=40&!buff.atonement.up&var.surge_of_light_procced
-    - plea,cycle=members,if=range<=40&!buff.atonement.up
+    - evangelism.player,name="Evangelism (Spread Atonement)",if=var.missing_atonement>1
+    - power_word_radiance.player,name="PW Radiance (Spread Atonement)",if=var.missing_atonement>10,delay=100
+    - penance,name="Penance (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&cycle.buff.atonement.down
+    - power_word_shield,name="PW Shield (Weak and Woe, not shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&!cycle.buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield,name="PW Shield (Weal and Woe, alredy shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield,name="PW Shield (Spread Atonement)",target=lowest,if=cycle.range>0&cycle.range<=40&var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
+    - flash_heal,name="Flash Heal (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.atonement.up&var.surge_of_light_procced
+    - plea,name="Plea (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.atonement.up
   main:
     - return,if=mounted|!rotation_enabled|state.blocked_inputs
     - call_action_list,name=spell_queue
     - call_action_list,name=out_of_combat
     - angelic_feather.player,if=var.use_af
-    - power_word_fortitude.player,if=var.missing_pwf
-    - shadow_word_pain.mouseover,if=config.MO_shadow_word_pain&mouseover.enemy&mouseover.alive&mouseover.debuff.shadow_word_pain&config.allow_pull_with_mo    
-    - target_mouseover,if=config.allow_pull_with_mo&!target.exists&mouseover.enemy
-    - return,if=!player.combat&active_enemies=0
-    - target_enemy,if=!target.exists&config.auto_targeting
+    - shadow_word_pain.mouseover,if=config.MO_shadow_word_pain&mouseover.enemy&mouseover.alive&!mouseover.debuff.shadow_word_pain.up&config.allow_pull_with_mo    
+    - return,name="Out of combat",if=!player.combat
+    - return,name="Channeling",if=player.channeling
     - call_action_list,name=pain_suppression_logic
     - call_action_list,name=moving,if=player.moving
     - call_action_list,name=high_prio
     - call_action_list,name=mouseover_friendly,if=config.MO_enabled&mouseover.exists&mouseover.alive&!player.casting&!player.channeling&mouseover.friendly
     - call_action_list,name=mouseover_enemy,if=config.MO_enabled&mouseover.exists&mouseover.alive&!player.casting&!player.channeling&mouseover.enemy
     - call_action_list,name=trinkets
-    - call_action_list,name=atonement_spread
+    - call_action_list,name=atonement_spread,if=var.missing_atonement>6
     - call_action_list,name=offensive,if=target.valid

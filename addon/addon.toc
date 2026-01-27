@@ -10,4 +10,5 @@
 
 # SpellDataExtension
 SpellDataExtension.lua
+DebugTools.lua
 

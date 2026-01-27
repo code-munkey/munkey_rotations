@@ -1,0 +1,399 @@
+version: 1
+author: munkey
+class: rogue
+spec: outlaw
+name: Outlaw M+
+description: Optimized Outlaw Rogue rotation for M+ with Fatebound and Trickster support
+entry: main
+
+movement_allowed: true
+
+morphs:
+  sinister_strike: ambush
+  dispatch: coup_de_grace
+
+config:
+  # Roll the Bones Settings
+  rtb_reroll_threshold:
+    label: "Roll the Bones Reroll Threshold"
+    type: slider
+    min: 1
+    max: 3
+    default: 2
+    description: "Reroll Roll the Bones when at or below this many buffs (with Loaded Dice)"
+  rtb_min_buffs_keep_rolling:
+    label: "Keep It Rolling Minimum Buffs"
+    type: slider
+    min: 3
+    max: 6
+    default: 4
+    description: "Minimum buffs to use Keep It Rolling"
+  
+  # Combo Point Settings
+  finisher_threshold:
+    label: "Finisher Combo Point Threshold"
+    type: slider
+    min: 5
+    max: 6
+    default: 6
+    description: "Use finishers at this many combo points (5 for Subterfuge, 6 otherwise)"
+  adrenaline_rush_max_cp:
+    label: "Adrenaline Rush Max Combo Points"
+    type: slider
+    min: 0
+    max: 3
+    default: 2
+    description: "Use Adrenaline Rush when at or below this many combo points"
+  
+  # Vanish Settings
+  vanish_adrenaline_rush_remains:
+    label: "Vanish AR Remains Threshold (s)"
+    type: slider
+    min: 1
+    max: 10
+    default: 3
+    description: "Vanish when Adrenaline Rush has <= this many seconds remaining"
+  vanish_charge_cap:
+    label: "Vanish Charge Cap Threshold (s)"
+    type: slider
+    min: 10
+    max: 20
+    default: 15
+    description: "Vanish when Vanish cooldown is at or below this to prevent overcapping"
+  
+  # AoE Settings
+  blade_flurry_threshold:
+    label: "Blade Flurry Enemy Threshold"
+    type: slider
+    min: 2
+    max: 4
+    default: 2
+    description: "Minimum enemies for Blade Flurry activation"
+  deft_maneuvers_threshold:
+    label: "Deft Maneuvers Target Threshold"
+    type: slider
+    min: 4
+    max: 8
+    default: 5
+    description: "Use Blade Flurry as builder at this many targets with Deft Maneuvers"
+  aoe_threshold:
+    label: "AoE Rotation Threshold"
+    type: slider
+    min: 2
+    max: 5
+    default: 2
+    description: "Switch to AoE rotation at this many enemies"
+  
+  # Cooldown Settings
+  sync_major_cooldowns:
+    label: "Sync Major Cooldowns"
+    type: checkbox
+    default: true
+    description: "Synchronize Adrenaline Rush with other major cooldowns"
+  use_keep_it_rolling:
+    label: "Use Keep It Rolling"
+    type: checkbox
+    default: true
+    description: "Enable Keep It Rolling usage (Fatebound build)"
+  use_killing_spree:
+    label: "Use Killing Spree"
+    type: checkbox
+    default: true
+    description: "Enable Killing Spree usage"
+  
+  # Defensive Settings
+  auto_defensives:
+    label: "Auto Defensives"
+    type: checkbox
+    default: true
+    description: "Automatically use defensive abilities"
+  feint_aoe_damage:
+    label: "Feint on AoE Damage"
+    type: checkbox
+    default: true
+    description: "Use Feint when taking AoE damage"
+  crimson_vial_threshold:
+    label: "Crimson Vial Health %"
+    type: slider
+    min: 30
+    max: 70
+    default: 50
+    description: "Use Crimson Vial when health drops below this %"
+  
+  # Opener Settings
+  use_stealth_opener:
+    label: "Use Stealth Opener"
+    type: checkbox
+    default: true
+    description: "Execute optimized opener from stealth"
+
+variables:
+  # === TARGET VALIDATION ===
+  target_valid: target.exists&target.enemy&target.alive
+  target_attackable: var.target_valid&target.range<=8&!target.immune
+  enemies_in_melee: enemies.8y
+  aoe_situation: var.enemies_in_melee>=config.aoe_threshold
+  single_target: var.enemies_in_melee<config.aoe_threshold
+  
+  # === COMBO POINT VARIABLES ===
+  combo_points_max: combo_points>=combo_points.max
+  combo_points_for_finisher: combo_points>=config.finisher_threshold
+  combo_points_for_finisher_subterfuge: combo_points>=5
+  combo_points_low: combo_points<=2
+  combo_points_for_adrenaline_rush: combo_points<=config.adrenaline_rush_max_cp
+  
+  # === ROLL THE BONES TRACKING ===
+  rtb_buff_count: buff.broadside.up+buff.buried_treasure.up+buff.grand_melee.up+buff.ruthless_precision.up+buff.skull_and_crossbones.up+buff.true_bearing.up
+  rtb_no_buffs: var.rtb_buff_count=0
+  rtb_low_buffs: var.rtb_buff_count<=config.rtb_reroll_threshold
+  rtb_high_buffs: var.rtb_buff_count>=config.rtb_min_buffs_keep_rolling
+  rtb_should_roll: var.rtb_no_buffs|(talent.loaded_dice.enabled&var.rtb_low_buffs)
+  rtb_should_keep_it_rolling: talent.keep_it_rolling.enabled&var.rtb_high_buffs&cooldown.keep_it_rolling.ready&config.use_keep_it_rolling
+  loaded_dice_active: buff.loaded_dice.up
+  supercharger_active: buff.supercharger.up
+  
+  # === STEALTH AND SUBTERFUGE ===
+  stealth_active: buff.stealth.up|buff.vanish.up|buff.shadow_dance.up
+  subterfuge_active: buff.subterfuge.up
+  subterfuge_remains: buff.subterfuge.remains
+  
+  # === ADRENALINE RUSH TRACKING ===
+  adrenaline_rush_up: buff.adrenaline_rush.up
+  adrenaline_rush_remains: buff.adrenaline_rush.remains
+  adrenaline_rush_ready: cooldown.adrenaline_rush.ready
+  adrenaline_rush_should_use: var.adrenaline_rush_ready&var.combo_points_for_adrenaline_rush&var.target_attackable
+  
+  # === VANISH TRACKING ===
+  vanish_ready: cooldown.vanish.ready
+  vanish_charges: cooldown.vanish.charges
+  vanish_charge_time: cooldown.vanish.full_recharge_time
+  vanish_should_use: var.vanish_ready&var.adrenaline_rush_up&var.combo_points_for_finisher&var.bte_ready
+  vanish_ar_expiring: var.adrenaline_rush_remains<=config.vanish_adrenaline_rush_remains
+  vanish_charge_capping: var.vanish_charge_time<=config.vanish_charge_cap
+  vanish_bte_on_cooldown: cooldown.between_the_eyes.remains>0&buff.ruthless_precision.up
+  
+  # === BETWEEN THE EYES TRACKING ===
+  bte_ready: cooldown.between_the_eyes.ready
+  bte_usable: var.bte_ready|var.subterfuge_active
+  ruthless_precision_up: buff.ruthless_precision.up
+  
+  # === KILLING SPREE TRACKING ===
+  killing_spree_ready: cooldown.killing_spree.ready
+  killing_spree_usable: var.killing_spree_ready&config.use_killing_spree&!var.subterfuge_active&var.combo_points_for_finisher
+  killing_spree_dont_override_vanish: var.adrenaline_rush_up&var.adrenaline_rush_remains<=5&cooldown.vanish.remains<=5
+  
+  # === GHOSTLY STRIKE TRACKING ===
+  ghostly_strike_ready: cooldown.ghostly_strike.ready
+  ghostly_strike_usable: var.ghostly_strike_ready&var.target_attackable
+  ghostly_strike_before_finisher: var.ghostly_strike_usable&var.combo_points_for_finisher
+  
+  # === BLADE FLURRY TRACKING ===
+  blade_flurry_up: buff.blade_flurry.up
+  blade_flurry_ready: cooldown.blade_flurry.ready
+  blade_flurry_should_use: var.blade_flurry_ready&var.aoe_situation&!var.blade_flurry_up
+  blade_flurry_should_refresh: var.blade_flurry_up&var.aoe_situation&combo_points<=4&var.enemies_in_melee>=4
+  deft_maneuvers_active: talent.deft_maneuvers.enabled
+  blade_flurry_as_builder: var.deft_maneuvers_active&var.enemies_in_melee>=config.deft_maneuvers_threshold&combo_points<=4
+  
+  # === OPPORTUNITY AND AUDACITY TRACKING ===
+  opportunity_up: buff.opportunity.up
+  opportunity_stacks: buff.opportunity.stack
+  opportunity_high_stacks: var.opportunity_stacks>=6
+  broadside_up: buff.broadside.up
+  audacity_up: buff.audacity.up
+  
+  # === COUP DE GRACE (TRICKSTER) ===
+  escalating_blade_stacks: buff.escalating_blade.stack
+  coup_de_grace_ready: var.escalating_blade_stacks>=4
+  
+  # === FATEBOUND TRACKING ===
+  fatebound_coin_heads: buff.fatebound_coin_heads.stack
+  fatebound_coin_tails: buff.fatebound_coin_tails.stack
+  fateful_ending_active: buff.fateful_ending.up
+  
+  # === WITHOUT A TRACE (double Vanish) ===
+  without_a_trace_talented: talent.without_a_trace.enabled
+  vanish_charges_max: cooldown.vanish.max_charges
+  vanish_has_double_charge: var.without_a_trace_talented&cooldown.vanish.charges>=2
+  
+  # === DEFENSIVE TRACKING ===
+  health_low: health.pct<config.crimson_vial_threshold
+  health_critical: health.pct<30
+  health_moderate: health.pct<60
+  feint_ready: cooldown.feint.ready
+  crimson_vial_ready: cooldown.crimson_vial.ready
+  evasion_ready: cooldown.evasion.ready
+  cloak_of_shadows_ready: cooldown.cloak_of_shadows.ready
+  
+  # === UTILITY ===
+  sprint_ready: cooldown.sprint.ready
+  grapple_ready: cooldown.grappling_hook.ready
+  
+  # === INTERRUPT TRACKING ===
+  kick_ready: cooldown.kick.ready
+  target_casting_interruptible: target.casting&target.casting.interruptible
+  
+  # === POISON CHECK ===
+  instant_poison_active: mainhand.enchant.up
+
+lists:
+  main:
+    # === ROTATION STATE VALIDATION ===
+    - return,if=!state.rotation|player.mounted
+    #- return,if=!var.target_valid
+    
+    # === EMERGENCY DEFENSIVES ===
+    - call_action_list,name=defensives,if=var.health_critical&config.auto_defensives
+    
+    # === INTERRUPTS AND UTILITY ===
+    - call_action_list,name=utility,if=var.target_attackable
+    
+    # === POISON CHECK (pre-combat only) ===
+    #- instant_poison,if=!var.instant_poison_active&!player.combat
+    
+    # === STEALTH ENTRY ===
+    - stealth,if=!player.combat&!var.stealth_active&var.target_attackable
+    
+    # === OPENER (from stealth) ===
+    - call_action_list,name=opener,if=!player.combat.time>5&var.stealth_active&config.use_stealth_opener
+    
+    # === OFF-GCD ABILITIES ===
+    - ghostly_strike,if=var.ghostly_strike_before_finisher
+    
+    # === COOLDOWNS ===
+    - call_action_list,name=cooldowns,if=var.target_attackable
+    
+    # === BLADE FLURRY (AoE) ===
+    - call_action_list,name=aoe_setup,if=var.aoe_situation
+    
+    # === MAIN ROTATION ===
+    - call_action_list,name=stealth_rotation,if=var.subterfuge_active
+    - call_action_list,name=single_target,if=var.single_target
+    - call_action_list,name=aoe,if=var.aoe_situation
+
+  opener:
+    # Outlaw Opener from Stealth
+    # 1. Adrenaline Rush (if talented)
+    - adrenaline_rush,if=var.adrenaline_rush_should_use
+    
+    # 2. Roll the Bones (if needed)
+    - roll_the_bones,if=var.rtb_should_roll
+    
+    # 3. Ghostly Strike
+    - ghostly_strike,if=var.ghostly_strike_usable
+    
+    # 4. Between the Eyes (from stealth with Crackshot)
+    - between_the_eyes,if=var.combo_points_for_finisher_subterfuge
+    
+    # 5. Dispatch if we somehow have CP but not in good position for BtE
+    - dispatch,if=var.combo_points_for_finisher_subterfuge
+    
+    # 6. Builder to get combo points
+    - ambush,if=combo_points<5
+    - sinister_strike,if=combo_points<5
+
+  cooldowns:
+    # === ROLL THE BONES MANAGEMENT ===
+    - keep_it_rolling,if=var.rtb_should_keep_it_rolling
+    - roll_the_bones,if=var.rtb_should_roll&!cooldown.keep_it_rolling.remains<=1
+    
+    # === ADRENALINE RUSH ===
+    - adrenaline_rush,if=var.adrenaline_rush_should_use
+    
+    # === VANISH USAGE ===
+    # Vanish during AR with BtE ready and specific conditions met
+    - vanish,if=var.vanish_should_use&(var.vanish_ar_expiring|var.vanish_charge_capping|var.vanish_bte_on_cooldown|var.supercharger_active)
+    
+    # === KILLING SPREE ===
+    - killing_spree,if=var.killing_spree_usable&!var.killing_spree_dont_override_vanish
+
+  stealth_rotation:
+    # During Subterfuge - prioritize Between the Eyes
+    # Between the Eyes is the only finisher during Subterfuge
+    - between_the_eyes,if=var.combo_points_for_finisher_subterfuge
+    
+    # Coup de Grace for Trickster (if not in Subterfuge, handled here via edge cases)
+    - dispatch,if=var.coup_de_grace_ready&var.combo_points_for_finisher_subterfuge&!var.subterfuge_active
+    
+    # Dispatch as finisher if BtE not ready
+    - dispatch,if=var.combo_points_for_finisher_subterfuge&!var.bte_usable
+    
+    # Ambush as builder during Subterfuge
+    - ambush,if=combo_points<5
+
+  single_target:
+    # === FINISHERS ===
+    # Between the Eyes at 6+ CP (or during Ruthless Precision)
+    - between_the_eyes,if=var.combo_points_for_finisher&var.bte_ready&(var.ruthless_precision_up|var.combo_points_max)
+    
+    # Dispatch at 6+ CP
+    - dispatch,if=var.combo_points_for_finisher
+    
+    # Coup de Grace for Trickster
+    - dispatch,if=var.coup_de_grace_ready&combo_points>=5
+    
+    # === BUILDERS ===
+    # Ambush with Audacity proc
+    - ambush,if=var.audacity_up&combo_points<5
+    
+    # Pistol Shot with Opportunity (adjust for Broadside)
+    - pistol_shot,if=var.opportunity_up&combo_points<4&!var.broadside_up
+    - pistol_shot,if=var.opportunity_up&combo_points<2&var.broadside_up
+    - pistol_shot,if=var.opportunity_high_stacks&combo_points<5
+    
+    # Sinister Strike as default builder
+    - sinister_strike,if=combo_points<5
+
+  aoe_setup:
+    # Maintain Blade Flurry for AoE
+    - blade_flurry,if=var.blade_flurry_should_use
+    - blade_flurry,if=var.blade_flurry_should_refresh
+
+  aoe:
+    # AoE rotation is similar to ST but with Blade Flurry active
+    # With Deft Maneuvers, Blade Flurry becomes a builder at high target counts
+    
+    # === FINISHERS ===
+    - between_the_eyes,if=var.combo_points_for_finisher&var.bte_ready&(var.ruthless_precision_up|var.combo_points_max)
+    - dispatch,if=var.combo_points_for_finisher
+    
+    # === BUILDERS ===
+    # Blade Flurry as builder with Deft Maneuvers at 5+ targets
+    - blade_flurry,if=var.blade_flurry_as_builder
+    
+    # Ambush with Audacity
+    - ambush,if=var.audacity_up&combo_points<5
+    
+    # Pistol Shot with Opportunity
+    - pistol_shot,if=var.opportunity_up&combo_points<4&!var.broadside_up
+    - pistol_shot,if=var.opportunity_up&combo_points<2&var.broadside_up
+    - pistol_shot,if=var.opportunity_high_stacks&combo_points<5
+    
+    # Sinister Strike as default
+    - sinister_strike,if=combo_points<5
+
+  defensives:
+    # === DEFENSIVE ABILITIES ===
+    - crimson_vial,if=var.health_low&var.crimson_vial_ready
+    - feint,if=config.feint_aoe_damage&var.feint_ready&var.aoe_situation
+    - evasion,if=var.health_critical&var.evasion_ready&!buff.feint.up
+    - cloak_of_shadows,if=var.health_critical&player.has_magic_debuff&var.cloak_of_shadows_ready
+    
+    # === EMERGENCY HEALING ===
+    - healthstone,if=healthstone.ready&var.health_critical
+    - health_potion,if=health_potion.ready&var.health_critical&!healthstone.ready
+
+  utility:
+    # === INTERRUPTS ===
+    - kick,if=var.kick_ready&var.target_casting_interruptible
+    
+    # === CROWD CONTROL ===
+    - gouge,if=target.casting&target.casting.interruptible&!var.kick_ready&target.range<8
+    - blind,if=target.casting&target.casting.interruptible&!var.kick_ready&target.range<8&cooldown.kick.remains>2
+    
+    # === MOBILITY ===
+    - sprint,if=player.moving&!player.combat&var.sprint_ready&target.range>15
+    - grappling_hook,if=talent.grappling_hook.enabled&player.moving&var.grapple_ready&target.range>20
+    
+    # === SOOTHE (Trickster) ===
+    - soothe,if=talent.trickster.enabled&target.has_enrage

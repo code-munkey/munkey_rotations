@@ -206,7 +206,7 @@ variables:
   berserk_combo_buffer: var.berserk_window_active&combo_points<5
   combo_point_waste_potential: combo_points>=var.combo_point_waste_threshold_met&!var.combo_points_for_finisher
   combo_generation_needed: combo_points<3&!buff.apex_predators_craving.up
-  resource_efficiency_good: "!var.energy_waste_potential&!var.combo_point_waste_potential"
+  resource_efficiency_good: !var.energy_waste_potential&!var.combo_point_waste_potential
   resource_dump_priority: var.energy_dump_needed|var.combo_points_capped|var.energy_cap_reached
   resource_generation_priority: var.energy_starved|var.combo_generation_needed
   enemies_in_range: enemies.8y
@@ -235,7 +235,7 @@ variables:
   # AoE threshold and priority switching
   aoe_threshold_met: var.enemies_in_range>=config.aoe_enemy_threshold
   aoe_priority_active: var.aoe_threshold_met&var.optimal_positioning
-  single_target_priority_active: "!var.aoe_threshold_met&var.target_attackable"
+  single_target_priority_active: !var.aoe_threshold_met&var.target_attackable
   
   # Target health and priority assessment
   target_low_health: target.health.pct<=35
@@ -248,13 +248,13 @@ variables:
   
   # === DOT TRACKING VARIABLES ===
   # Rake DoT tracking
-  rake_missing: "debuff.rake.down"
+  rake_missing: debuff.rake.down
   rake_pandemic: debuff.rake.refreshable
   rake_refresh_needed: var.rake_missing|var.rake_pandemic
   rake_duration_remaining: debuff.rake.remains
   
   # Rip DoT tracking  
-  rip_missing: "debuff.rip.down"
+  rip_missing: debuff.rip.down
   rip_pandemic: debuff.rip.refreshable
   rip_refresh_needed: var.rip_missing|var.rip_pandemic
   rip_duration_remaining: debuff.rip.remains
@@ -320,7 +320,7 @@ variables:
   prowl_available: cooldown.prowl.ready&var.berserk_up
   stealth_active: buff.prowl.up|buff.shadowmeld.up|buff.stealth.up
   opener_conditions_met: var.stealth_active&config.use_stealth_opener&combat.time<=config.opener_flexibility_window
-  opener_timing_flexible: "!config.opener_sequence_strict&var.stealth_active&combat.time<=config.opener_flexibility_window"
+  opener_timing_flexible: !config.opener_sequence_strict&var.stealth_active&combat.time<=config.opener_flexibility_window
   
   # === TALENT-SPECIFIC LOGIC VARIABLES ===
   # Incarnation: Avatar of Ashamane talent detection and replacement logic
@@ -449,8 +449,8 @@ variables:
   mo_valid_for_rake: mouseover.range<8&mouseover.exists&mouseover.alive&mouseover.enemy&mouseover.debuff.remains(rake)<=gcd.remains
   
   # Target switching efficiency - simplified logic  
-  target_switch_needed: config.target_switching_enabled&var.aoe_situation&"!var.dot_coverage_complete"
-  maintain_current_target: var.dot_coverage_complete|var.single_target_situation|"!config.target_switching_enabled"
+  target_switch_needed: config.target_switching_enabled&var.aoe_situation&!var.dot_coverage_complete
+  maintain_current_target: var.dot_coverage_complete|var.single_target_situation|!config.target_switching_enabled
 
 lists:
   main:
@@ -864,27 +864,28 @@ lists:
     # === SIMPLE TARGET SWITCHING FOR DOT COVERAGE ===
     # Only switch if we have incomplete DoT coverage and target switching is enabled
     - return,if=var.dot_coverage_complete
-    - return,if="!config.target_switching_enabled"
+    - return,if=!config.target_switching_enabled
     - return,if=var.single_target_situation
     
-    # Switch to next target to check for DoT application opportunities
-    - target_enemy,if=nameplates.debuff.rake.count<active_enemies|nameplates.debuff.rip.count<active_enemies
+    # Switch to mouseover enemy if it needs DoTs (player can control target selection)
+    - rake.mouseover,if=mouseover.enemy&mouseover.alive&mouseover.debuff.remains(rake)<=0&var.energy_available_rake
+    - rip.mouseover,if=mouseover.enemy&mouseover.alive&mouseover.debuff.remains(rip)<=0&combo_points>=5&var.energy_available_rip
     
     # Apply Rake if current target is missing it and we have energy
-    - rake,if="!debuff.rake.up"&var.energy_available_rake
+    - rake,if=debuff.rake.down&var.energy_available_rake
     
     # Apply Rip if current target is missing it and we have combo points
-    - rip,if="!debuff.rip.up"&combo_points>=5&var.energy_available_rip
+    - rip,if=debuff.rip.down&combo_points>=5&var.energy_available_rip
     
     # Refresh Rake if it's in pandemic window
     - rake,if=debuff.rake.refreshable&var.energy_available_rake
     
     # Refresh Rip if it's in pandemic window  
     - rip,if=debuff.rip.refreshable&combo_points>=5&var.energy_available_rip
-    - primal_wrath,if=var.aoe_situation&combo_points>=5&var.energy_available_rip&var.rip_spread_targets<=1&dot.rip.refreshable
+    - primal_wrath,if=var.aoe_situation&combo_points>=5&var.energy_available_primal_wrath&var.rip_spread_targets<=1&dot.rip.refreshable
     
-    # Refresh DoTs on multiple targets when resources allow
-    - primal_wrath,if=dot.rip.refreshable.8y>=2&combo_points>=5&var.energy_available_primal_wrath&var.aoe_situation
+    # Refresh DoTs on multiple targets when resources allow using nameplate tracking
+    - primal_wrath,if=nameplates.debuff.rip.count<active_enemies&combo_points>=5&var.energy_available_primal_wrath&var.aoe_situation
     
     # === TARGET SWITCHING EFFICIENCY VALIDATION ===
     # Return to primary target when DoT coverage is complete
