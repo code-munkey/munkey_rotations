@@ -209,8 +209,8 @@ lists:
     - combat_potion,if=buff.avenging_wrath.up&config.use_combat_potion.has(3)&combat_potion.ready
   main:
     - call_action_list,name=core
-    - clenase_toxins,if=player.dispelable.list
-    - cleanse_toxins,cycle=dps,if=cycle.dispelable.list
+    - clenase_toxins,if=player.dispelable
+    - cleanse_toxins,cycle=dps,if=cycle.dispelable
     - call_action_list,name=defensives,if=var.use_defensives
     - intercession.mouseover,if=var.mo_is_resurrectable
     - avenging_wrath,if=!talent.radiant_glory&var.should_use_cds
