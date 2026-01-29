@@ -154,6 +154,6 @@ lists:
 
 ## Next Steps
 
-- Learn about [Rotation Syntax Basics](Rotation-Syntax-Basics) for more operators and expressions
-- Explore [Buff and Debuff Tracking](Buff-and-Debuff-Tracking) for aura management
-- Check out [Configuration Options](Configuration-Options) to make your rotation customizable
+- Learn about [Rotation Syntax Basics](Rotation-Syntax-Basics.md) for more operators and expressions
+- Explore [Buff and Debuff Tracking](Buff-and-Debuff-Tracking.md) for aura management
+- Check out [Configuration Options](Configuration-Options.md) to make your rotation customizable

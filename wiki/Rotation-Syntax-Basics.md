@@ -290,6 +290,6 @@ Run another list, then restart from the beginning:
 
 ## Next Steps
 
-- Learn about [Buff and Debuff Tracking](Buff-and-Debuff-Tracking)
-- Explore [Cooldown Management](Cooldown-Management)
-- See [Healing Targeting](Healing-Targeting) for group-based logic
+- Learn about [Buff and Debuff Tracking](Buff-and-Debuff-Tracking.md)
+- Explore [Cooldown Management](Cooldown-Management.md)
+- See [Healing Targeting](Healing-Targeting.md) for group-based logic

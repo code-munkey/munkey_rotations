@@ -297,6 +297,6 @@ Combine cycle targeting with dispel conditions:
 
 ## Next Steps
 
-- Learn about [Buff and Debuff Tracking](Buff-and-Debuff-Tracking) for HoT/DoT management
-- See [Configuration Options](Configuration-Options) to make thresholds customizable
-- Check [Advanced Examples](Advanced-Examples) for complete healer rotation patterns
+- Learn about [Buff and Debuff Tracking](Buff-and-Debuff-Tracking.md) for HoT/DoT management
+- See [Configuration Options](Configuration-Options.md) to make thresholds customizable
+- Check [Advanced Examples](Advanced-Examples.md) for complete healer rotation patterns

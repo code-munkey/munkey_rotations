@@ -345,6 +345,6 @@ lists:
 
 ## Next Steps
 
-- Learn about [Configuration Options](Configuration-Options) for user-customizable CD settings
-- See [Variables and Action Lists](Variables-and-Action-Lists) for organizing CD logic
-- Check [Advanced Examples](Advanced-Examples) for complete CD patterns
+- Learn about [Configuration Options](Configuration-Options.md) for user-customizable CD settings
+- See [Variables and Action Lists](Variables-and-Action-Lists.md) for organizing CD logic
+- Check [Advanced Examples](Advanced-Examples.md) for complete CD patterns

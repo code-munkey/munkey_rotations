@@ -386,6 +386,6 @@ Settings can also be defined in `_shared.yaml` under `config_shared:` to be avai
 
 ## Next Steps
 
-- Learn about [Variables and Action Lists](Variables-and-Action-Lists) to organize config usage
-- See [Advanced Examples](Advanced-Examples) for complete configuration patterns
-- Check [Healing Targeting](Healing-Targeting) for configurable heal thresholds
+- Learn about [Variables and Action Lists](Variables-and-Action-Lists.md) to organize config usage
+- See [Advanced Examples](Advanced-Examples.md) for complete configuration patterns
+- Check [Healing Targeting](Healing-Targeting.md) for configurable heal thresholds

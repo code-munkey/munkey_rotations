@@ -540,8 +540,8 @@ lists:
 
 ## See Also
 
-- [Getting Started](Getting-Started) - Basic concepts
-- [Rotation Syntax Basics](Rotation-Syntax-Basics) - Detailed syntax reference
-- [Healing Targeting](Healing-Targeting) - Group healing patterns
-- [Configuration Options](Configuration-Options) - Creating user settings
-- [Variables and Action Lists](Variables-and-Action-Lists) - Code organization
+- [Getting Started](Getting-Started.md) - Basic concepts
+- [Rotation Syntax Basics](Rotation-Syntax-Basics.md) - Detailed syntax reference
+- [Healing Targeting](Healing-Targeting.md) - Group healing patterns
+- [Configuration Options](Configuration-Options.md) - Creating user settings
+- [Variables and Action Lists](Variables-and-Action-Lists.md) - Code organization

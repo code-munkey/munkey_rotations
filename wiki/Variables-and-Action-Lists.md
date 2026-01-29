@@ -410,6 +410,6 @@ lists:
 
 ## Next Steps
 
-- See [Configuration Options](Configuration-Options) for user settings
-- Check [Advanced Examples](Advanced-Examples) for complete rotation patterns
-- Learn about [Cooldown Management](Cooldown-Management) for CD logic
+- See [Configuration Options](Configuration-Options.md) for user settings
+- Check [Advanced Examples](Advanced-Examples.md) for complete rotation patterns
+- Learn about [Cooldown Management](Cooldown-Management.md) for CD logic

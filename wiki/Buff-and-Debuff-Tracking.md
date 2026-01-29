@@ -345,6 +345,6 @@ lists:
 
 ## Next Steps
 
-- Learn about [Cooldown Management](Cooldown-Management) for ability timing
-- See [Healing Targeting](Healing-Targeting) for group buff tracking
-- Check [Variables and Action Lists](Variables-and-Action-Lists) for organizing complex buff logic
+- Learn about [Cooldown Management](Cooldown-Management.md) for ability timing
+- See [Healing Targeting](Healing-Targeting.md) for group buff tracking
+- Check [Variables and Action Lists](Variables-and-Action-Lists.md) for organizing complex buff logic
