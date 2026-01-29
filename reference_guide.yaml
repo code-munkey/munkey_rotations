@@ -367,33 +367,155 @@ actions:
 - dispel_magic_offensive,if=target.has_magic_buff
 
 # ----------------------------------------------------------------------------
-# SECTION 5D: DISPEL LIST
+s# SECTION 5D: DISPEL SYSTEM (AUTO-DETECT + EXPLICIT)
 # ----------------------------------------------------------------------------
 #
-# _dispeldata.yaml controls which debuffs/buffs are considered dispellable.
+# The dispel system supports two modes:
+#   1. AUTO-DETECT: Uses player's spec and talents to determine dispel types
+#   2. EXPLICIT: Specify a dispel spell or type manually
 #
-# dispel_spells: spell ID -> allowed types (Magic/Curse/Disease/Poison/Enrage)
-# dispel_list: debuff ID -> condition (string) or bool (true allow, false block)
-# - Missing from dispel_list: allowed
-# - false: blocked
-# - condition string: allowed only if condition is true
+# _dispeldata.yaml defines:
+#   dispel_specs: spec_id -> friendly dispel config (spell, types, talents)
+#   offensive_dispels: spec_id -> offensive dispel config (spell, types)
+#   dispel_spells: spell_id -> types (legacy, for backward compatibility)
+#   dispel_list: debuff_id -> allow/block/condition filtering rules
 #
-# Expressions:
-#   cycle.dispelable.SPELL      - Current cycle member has any dispellable debuff for SPELL
-#   cycle.dispelable.list.SPELL - Same, but applies dispel_list filtering rules
-#   target.dispelable.SPELL     - Target has any dispellable buff/enrage for SPELL
-#   target.dispelable.list.SPELL - Same, with dispel_list filtering rules
+# ============================================================================
+# FRIENDLY DISPELS - Removing debuffs from allies (player/cycle/group)
+# ============================================================================
+#
+# Auto-detect expressions (uses player's spec + talents):
+#   player.dispelable           - Player has dispelable debuff (auto-detect types)
+#   player.dispelable.list      - Same, with dispel_list filtering
+#   player.dispelable.magic     - Player has magic debuff (explicit type)
+#   player.dispelable.disease   - Player has disease debuff
+#   player.dispelable.poison    - Player has poison debuff
+#   player.dispelable.curse     - Player has curse debuff
+#
+#   cycle.dispelable            - Cycle member has dispelable debuff (auto-detect)
+#   cycle.dispelable.list       - Same, with dispel_list filtering
+#   cycle.dispelable.magic      - Cycle member has magic debuff
+#   cycle.dispelable.disease    - Cycle member has disease debuff
+#   cycle.dispelable.poison     - Cycle member has poison debuff
+#   cycle.dispelable.curse      - Cycle member has curse debuff
+#
+# Legacy explicit spell syntax (backward compatible):
+#   cycle.dispelable.SPELL      - Use specific dispel spell's capabilities
+#   cycle.dispelable.list.SPELL - Same, with dispel_list filtering
+#
+# ============================================================================
+# OFFENSIVE DISPELS - Removing buffs from enemies (target/mouseover/focus)
+# ============================================================================
+#
+# Auto-detect expressions (uses player's spec):
+#   target.purgeable            - Target has purgeable buff (auto-detect types)
+#   target.purgeable.list       - Same, with dispel_list filtering
+#   target.purgeable.magic      - Target has magic buff (explicit type)
+#   target.purgeable.enrage     - Target has enrage buff
+#
+#   mouseover.purgeable         - Mouseover has purgeable buff (auto-detect)
+#   mouseover.purgeable.list    - Same, with dispel_list filtering
+#   mouseover.purgeable.magic   - Mouseover has magic buff
+#   mouseover.purgeable.enrage  - Mouseover has enrage buff
+#
+#   focus.purgeable             - Focus has purgeable buff (auto-detect)
+#   focus.purgeable.list        - Same, with dispel_list filtering
+#   focus.purgeable.magic       - Focus has magic buff
+#   focus.purgeable.enrage      - Focus has enrage buff
+#
+# Legacy explicit spell syntax (backward compatible):
+#   target.dispelable.SPELL     - Target has buff dispelable by SPELL
+#   target.dispelable.list.SPELL - Same, with dispel_list filtering
+#
+# ============================================================================
+# EXISTING EXPRESSIONS (still supported)
+# ============================================================================
+#
+# Simple type checks (no spec detection):
+#   target.has_stealable        - Target has any stealable buff
+#   target.has_magic_buff       - Target has any magic buff
+#   target.has_enrage           - Target has enrage effect
+#   player.has_magic_debuff     - Player has any magic debuff
+#   player.has_curse            - Player has any curse debuff
+#   player.has_disease          - Player has any disease debuff
+#   player.has_poison           - Player has any poison debuff
+#
+# ============================================================================
+# EXAMPLES
+# ============================================================================
 #
 # Example _dispeldata.yaml:
-#   dispel_spells:
-#     4987: [Magic, Poison]  # Cleanse
-#   dispel_list:
-#     232452: "cycle.debuff.232452.elapsed.any>=3"
-#     389179: false
+#   dispel_specs:
+#     65:  # Holy Paladin
+#       spell: cleanse
+#       spell_id: 4987
+#       base: [magic, poison, disease]
+#     262:  # Elemental Shaman
+#       spell: cleanse_spirit
+#       spell_id: 51886
+#       base: [curse]
 #
-# Example usage:
-# - cleanse,cycle=members,if=cycle.dispelable.list.cleanse
-# - soothe,if=target.dispelable.soothe
+#   offensive_dispels:
+#     262:  # Elemental Shaman
+#       spell: purge
+#       spell_id: 370
+#       types: [magic]
+#
+#   dispel_list:
+#     232452: "cycle.debuff.spell_232452.elapsed.any>=3"  # Wait 3s
+#     389179: false  # Never dispel this
+#
+# Example rotation usage:
+
+# ============================================================================
+# Friendly Dispels (removing ally debuffs)
+# ============================================================================
+
+# Auto-detect - uses player's dispel spell + talents
+- purify,cycle=members,if=cycle.dispelable
+
+# Auto-detect with dispel_list filtering (skip dangerous debuffs)
+- purify,cycle=members,if=cycle.dispelable.list
+
+# Explicit type check
+- purify,cycle=members,if=cycle.dispelable.magic
+- detox,cycle=members,if=cycle.dispelable.poison|cycle.dispelable.disease
+
+# Self-dispel (auto-detect)
+- purify.player,if=player.dispelable
+
+# Self-dispel with filtering
+- purify.player,if=player.dispelable.list
+
+# Legacy explicit spell syntax (backward compatible)
+- cleanse,cycle=members,if=cycle.dispelable.list.cleanse
+
+# ============================================================================
+# Offensive Dispels (removing enemy buffs)
+# ============================================================================
+
+# Auto-detect - uses player's offensive dispel
+- purge,if=target.purgeable
+- dispel_magic,if=target.purgeable
+
+# Auto-detect with dispel_list filtering
+- purge,if=target.purgeable.list
+
+# Explicit type checks
+- spellsteal,if=target.purgeable.magic
+- soothe,if=target.purgeable.enrage
+- tranquilizing_shot,if=target.purgeable.enrage
+
+# Mouseover/focus purgeable
+- purge.mouseover,if=mouseover.purgeable
+- purge.focus,if=focus.purgeable
+
+# Legacy explicit spell syntax
+- soothe,if=target.dispelable.soothe
+
+# ============================================================================
+# Simple type checks (no spec detection, still supported)
+# ============================================================================
 
 # Soothe enraged targets
 - soothe,if=target.has_enrage
@@ -531,6 +653,7 @@ actions:
 #   mob_count_8y - Require at least 1 enemy within 8 yards
 #   mob_count_40y - Require at least 1 enemy within 40 yards
 #   none         - Skip all range checks (for self-buffs, ground targeting)
+#   <spell_name> - Use a different spell's range data (checks target)
 #
 # AUTO-INFERENCE: range_check is automatically inferred from cast target suffix:
 #   .focus     -> range_check=focus
@@ -558,6 +681,9 @@ actions:
 
 # Require enemies nearby (melee range)
 - whirlwind,range_check=mob_count_8y,if=active_enemies>=2
+
+# Use a different spell's range data (e.g., check moonfire range for a step that casts regrowth)
+- regrowth,range_check=moonfire,if=buff.clearcasting.up
 
 # ============================================================================
 # casting_check - Only cast while player is casting specific spell
@@ -1077,19 +1203,10 @@ actions:
 # ----------------------------------------------------------------------------
 #
 # See SECTION 16 for common unit properties shared by all units.
-# This section covers target-specific properties and examples.
+# Enemy unit properties (boss, quest_mob, combat, moving, etc.) are shared
+# by target, focus, and mouseover - see "ENEMY UNIT PROPERTIES" in Section 16.
 #
-# Target-specific properties:
-#   target.boss              - Target is a boss
-#   target.quest_mob         - Target is a quest mob
-#   target.attackable        - Target can be attacked
-#   target.combat            - Target is in combat (extended check)
-#   target.moving            - Target is moving
-#   target.targeting_party   - Target is targeting party member
-#   target.classification    - Target classification (elite, rare, etc.)
-#   target.threat            - Threat level on target (0-3, -1 if N/A)
-#   target.lootable          - Target is lootable
-#   target.time_to_die       - Estimated seconds until target dies
+# Target-specific aliases:
 #   time_to_die              - Alias for target.time_to_die
 #   fight_remains            - Estimated time remaining in fight
 
@@ -1173,23 +1290,24 @@ actions:
 # {unit}.casting.targeting_me - Cast is targeting player
 #
 # ============================================================================
-# UNIT-SPECIFIC PROPERTIES
+# ENEMY UNIT PROPERTIES (target, focus, mouseover)
 # ============================================================================
 #
-# Target only:
-#   target.boss              - Is a boss
-#   target.quest_mob         - Is a quest mob
-#   target.attackable        - Can be attacked
-#   target.combat            - Is in combat (extended check)
-#   target.moving            - Is moving
-#   target.targeting_party   - Is targeting party member
-#   target.classification    - Unit classification (elite, rare, etc.)
-#   target.threat            - Threat level
-#   target.lootable          - Is lootable
-#   target.time_to_die       - Estimated seconds until death
+# These properties are available for target, focus, and mouseover:
+#   {unit}.boss              - Is a boss
+#   {unit}.quest_mob         - Is a quest mob
+#   {unit}.attackable        - Can be attacked (enemy and not dead)
+#   {unit}.combat            - Is in combat (extended check)
+#   {unit}.moving            - Is moving
+#   {unit}.targeting_party   - Is targeting party member
+#   {unit}.classification    - Unit classification (elite, rare, etc.)
+#   {unit}.threat            - Threat level (0-3, -1 if N/A)
+#   {unit}.lootable          - Is lootable
+#   {unit}.time_to_die       - Estimated seconds until death
 #
-# Mouseover only:
-#   mouseover.lootable       - Is lootable
+# Aliases (for target only):
+#   time_to_die              - Alias for target.time_to_die
+#   fight_remains            - Estimated time remaining in fight
 #
 # Pet only:
 #   pet.nearby_enemies       - Count of enemies within 8 yards of pet
@@ -1307,6 +1425,7 @@ actions:
 #   tanks    - Only tanks (sorted by HP)
 #   healers  - Only healers (sorted by HP)
 #   dps      - Only DPS (sorted by HP)
+#   party    - Only party1-4 (direct .party1/.party2 casting, for DPS/tanks)
 #
 # How it works:
 #   1. Gets list of members in group, sorted by HP (lowest first)
@@ -1314,6 +1433,12 @@ actions:
 #   3. For each member, evaluates conditions (use cycle.* for per-member checks)
 #   4. Casts on FIRST member where conditions pass
 #   5. Use explicit cycle.* expressions to check the CURRENT cycle member
+#
+# cycle=party special behavior:
+#   - Only cycles through party1, party2, party3, party4 (not player, not raid)
+#   - Uses direct .party1/.party2 keybinds instead of focus casting
+#   - Ideal for DPS/tanks who want to dispel party members without focus macros
+#   - Requires keybinds like: purify.party1, purify.party2, etc.
 #
 # This is powerful for conditional per-member checks!
 
@@ -1331,6 +1456,20 @@ actions:
 
 # Heal first DPS under 50%
 - heal,cycle=dps,if=cycle.health.pct<50
+
+# ============================================================================
+# DPS/Tank party dispels (cycle=party)
+# ============================================================================
+# Uses direct .party1/.party2 keybinds instead of focus casting
+
+# Dispel first party member with dispelable debuff (auto-detect + filtering)
+- purify,cycle=party,if=cycle.dispelable.list
+
+# Cleanse toxins from party members (Paladin Prot/Ret)
+- cleanse_toxins,cycle=party,if=cycle.dispelable.poison|cycle.dispelable.disease
+
+# Remove curse from party (Mage/Druid)
+- remove_curse,cycle=party,if=cycle.dispelable.curse
 
 # ============================================================================
 # CYCLE CONTEXT EXPRESSIONS

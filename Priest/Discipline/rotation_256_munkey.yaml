@@ -1,47 +1,40 @@
-version: 3
+version: 1.0
 author: munkey
-class: Priest
-spec: Discipline
+spec: 256
 name: Discipline
-description: This is a basic rotation for Discipline Priest
-entry: main
+description: Banging disc priest rotation
+
 morphs:
   smite: void_blast
 
 config:
-  auto_targeting:
-    label: "Auto-target if no target"
-    type: checkbox
-    default: true
-  allow_pull_with_mo:
-    label: "Pull with MO"
-    type: checkbox
-    default: false
+  ## Emergency Settings
+  pain_suppression_usage:
+    label: Auto-use PS on
+    type: multi_select
+    options:
+      - label: "Tank"
+        value: 1
+      - label: "Healer"
+        value: 2
+      - label: "DPS"
+        value: 3
+    default: [0,1]
   pain_suppression_threshold:
     label: Pain Suppression %
-    type: slider
-    min: 10
-    max: 60
     default: 20
-  pain_suppression_usage:
-    label: Use PS on
-    type: dropdown
-    options:
-      - label: "Tank Only"
-        value: 1
-      - label: "Tank & Healer"
-        value: 2
-      - label: "Everyone"
-        value: 3
-      - label: "Disabled"
-        value: 0
-    default: 2
   ultimate_penitence_members:
-    label: Members below 50%
-    type: slider
+    label: "Ult. Pen. Members below HP%"
     min: 1
     max: 5
     default: 3
+  ultimate_penitence_hp_treshold:
+    label: "Ult. Pen. HP%"
+    default: 50
+  desperate_prayer_threshold:
+    label: Desperate prayer %
+    default: 30
+  ## Utility Settings
   angelic_feather_usage:
     label: Use Angelic Feather
     type: dropdown
@@ -59,17 +52,17 @@ config:
     label: Angelic Feather Movement
     type: slider
     min: 0
-    max: 4
+    max: 5
     default: 2
-  desperate_prayer_threshold:
-    label: Desperate prayer %
-    min: 10
-    max: 70
-    default: 30
+  ## Mouseover Settings
   MO_enabled:
     label: Enable Mouseover
     type: checkbox
     default: true
+  allow_pull_with_mo:
+    label: "Pull with MO"
+    type: checkbox
+    default: false
   MO_pain_suppression:
     label: Use PS on MO
     type: checkbox
@@ -80,7 +73,6 @@ config:
     default: true
   MO_penance_treshold:
     label: "MO Penance"
-    type: slider
     default: 60
   MO_flash_heal:
     label: Use Flash Heal on MO
@@ -88,7 +80,6 @@ config:
     default: true
   MO_flash_heal_treshold:
     label: "MO Flash Heal"
-    type: slider
     default: 40
   MO_purify:
     label: Dispell on MO
@@ -98,18 +89,19 @@ config:
     label: SW Pain on MO
     type: checkbox
     default: true
+  
+  ## Out of Combat Settings
   OOC_penance_treshold:
     label: "OOC Penance %"
-    type: slider
     default: 95
   OOC_flash_heal_treshold:
     label: "OOC Flash Heal"
-    type: slider
     default: 70
   SWD_usage_treshhold:
     label: "SW: Death HP Treshold"
-    type: slider
     default: 50
+  
+  ## Trinket Settings
   living_silk_usage:
     label: "Living Silk usage"
     type: dropdown
@@ -123,78 +115,89 @@ config:
     default: 1
   living_silk_members_treshold:
     label: "Living Silk Members"
-    type: slider
     min: 1
     max: 5
     default: 3
-  living_silk_percentage_treshold:
+  living_silk_hp_treshold:
     label: "Living Silk %"
-    type: dropdown
-    options:
-      - label: "30%"
-        value: 1
-      - label: "50%"
-        value: 2
-      - label: "75%"
-        value: 3
-      - label: "80%"
-        value: 4
-      - label: "85%"
-        value: 5
-      - label: "90%"
-        value: 6
+    default: 30
   weal_and_woe_min_stacks:
     label: "Min. weal and woe stacks for PW:S"
     type: slider
     min: 0
     max: 10
     default: 10
+  atonement_spread_raid:
+    label: "Max missing atonement raid"
+    max: 30
+    default: 10
+  atonement_spread_party:
+    label: "Max missing atonement party"
+    max: 5
+    default: 0
 
 variables:
-  use_af: player.moving.time>=config.angelic_feather_movement_time&buff.angelic_feather.down&((!player.combat&config.angelic_feather_usage=3|4)|(player.combat&config.angelic_feather_usage=2|4))
-  missing_atonement: group.count(cycle.buff.atonement.down&cycle.range<=40)
-  missing_pwf: group.count(cycle.buff.power_word_fortitude.down&cycle.range>0)>0
+  ## Use Angelic Feather if moving for treshhold (2) seconds and no feather on me and in combat or out of combat depending on setting
+  use_af: 
+    ((config.angelic_feather_usage=2&player.combat)
+    |(config.angelic_feather_usage=3&!player.combat)
+    |(config.angelic_feather_usage=4))&!buff.angelic_feather.up&moving.time>=config.angelic_feather_movement_time
+  ## Someone within 40 yards without my Atonement
+  missing_atonement: group.count(cycle.buff.atonement.down.mine&cycle.range<=40&cycle.range>0)
+  ## Someone within 40 yards without PW:F
+  missing_pwf: group.count(cycle.buff.power_word_fortitude.down&cycle.range>0&cycle.range<=40)
+  ## MO is over a friendly player within 40 yards
   friendly_and_valid_mo: mouseover.exists&mouseover.alive&mouseover.friendly&mouseover.range>0&mouseover.range<=40
+  ## Trinket 1 is living silk
   trinket1_living_silk: trinket_1.id=242393
+  ## Trinket 2 is living silk
   trinket2_living_silk: trinket_2.id=242393
+  ## Living Silk equipped
   trinket_living_silk: var.trinket1_living_silk|var.trinket2_living_silk
-  surge_of_light_procced: buff.surge_of_light.up
+  ## Surge of light has procced
+  surge_of_light_procced: buff.surge_of_light.react
+  ## Number of Weal and Woe stacks
   weal_and_woe_stacks: buff.weal_and_woe.stack
-  hold_penance: cooldown.penance.full_recharge_time<2
-  living_silk_treshold_trigger: config.living_silk_usage=2&((config.living_silk_percentage_treshold=1&group.under_pct_30>=config.living_silk_members_treshold)|(config.living_silk_percentage_treshold=2&group.under_pct_50>=config.living_silk_members_treshold)|(config.living_silk_percentage_treshold=3&group.under_pct_75>=config.living_silk_members_treshold)|(config.living_silk_percentage_treshold=4&group.under_pct_80>=config.living_silk_members_treshold)|(config.living_silk_percentage_treshold=5&group.under_pct_85>=config.living_silk_members_treshold)|(config.living_silk_percentage_treshold=6&group.under_pct_90>=config.living_silk_members_treshold))
+  ## Penance Stacks
+  penance_stacks: cooldown.penance.charges
+  ## Hold penance if close to full regen and Holy Ray talented
+  hold_penance: cooldown.penance.full_recharge_time<2&talent.holy_ray
+  ## Trigger for Living Silk based on percentage of members below a certain threshold
+  living_silk_treshold_trigger: config.living_silk_usage=2&config.living_silk_members_treshold<=group.count(cycle.health.pct<=config.living_silk_hp_treshold)
 
 lists:
   living_silk:
-    - trinket_1,if=var.trinket1_living_silk&trinket_1.cd=0&config.living_silk_usage!=3&((config.living_silk_usage=1)|var.living_silk_treshold_trigger)
-    - trinket_2,if=var.trinket2_living_silk&trinket_2.cd=0&config.living_silk_usage!=3&((config.living_silk_usage=1)|var.living_silk_treshold_trigger)
+    - trinket_1,if=var.trinket1_living_silk&trinket_1.ready&(config.living_silk_usage=1|var.living_silk_treshold_trigger)
+    - trinket_2,if=var.trinket2_living_silk&trinket_2.ready&(config.living_silk_usage=1|var.living_silk_treshold_trigger)
   out_of_combat:
-    - penance,cycle=members,if=cycle.health.pct<config.OOC_penance_treshold&!player.combat
-    - flash_heal,cycle=members,if=cycle.health.pct<config.OOC_flash_heal_treshold&!player.combat
+    - flash_heal,cycle=members,if=var.surge_of_light_procced&cycle.health.pct<=config.OOC_flash_heal_treshold&!player.combat
+    - penance,cycle=members,if=cycle.health.pct<=config.OOC_penance_treshold&!player.combat
+    - flash_heal,cycle=members,if=cycle.health.pct<=config.OOC_flash_heal_treshold&!player.combat
   offensive:
-    - shadow_word_pain,if=debuff.shadow_word_pain.remains<=0
-    - penance,if=cooldown.penance.charges=2|buff.power_of_the_dark_side.up|!cooldown.mind_blast.ready
+    - shadow_word_pain,if=debuff.shadow_word_pain.refreshable
+    - penance,if=cooldown.penance.full_recharge_time=0|buff.power_of_the_dark_side.up|!cooldown.mind_blast.ready
     - mind_blast
-    - shadow_word_death,if=health.pct>config.SWD_usage_treshhold&(target.health.pct<=20|talent.void_blast)
+    - shadow_word_death,if=health.pct>=config.SWD_usage_treshhold|talent.void_blast
     - void_blast,if=talent.void_blast&buff.entropic_rift.up
     - smite
   high_prio:
-    - ultimate_penitence,if=group.under_pct_50>=config.ultimate_penitence_members
-    - desperate_prayer,if=health.pct<config.desperate_prayer_threshold
-    - penance,cycle=members,if=health.pct<config.MO_penance_treshold&!var.hold_penance
+    - ultimate_penitence,if=group.count(cycle.health.pct<=config.ultimate_penitence_hp_treshold)>=config.ultimate_penitence_members
+    - desperate_prayer,if=health.pct<=config.desperate_prayer_threshold
+    - penance,cycle=members,if=health.pct<=config.MO_penance_treshold&!var.hold_penance
   mouseover_friendly:
-    - pain_suppression.mouseover,if=config.MO_pain_suppression&mouseover.health.pct<config.pain_suppression_threshold&mouseover.buff.remains(pain_suppression)=0
-    - penance.mouseover,if=config.MO_penance&mouseover.health.pct<config.MO_penance_treshold
-    - flash_heal.mouseover,if=config.MO_flash_heal&mouseover.range&mouseover.health.pct<config.MO_flash_heal_treshold
+    - pain_suppression.mouseover,if=player.combat&config.MO_pain_suppression&mouseover.health.pct<=config.pain_suppression_threshold&mouseover.buff.remains(pain_suppression)=0
+    - penance.mouseover,if=config.MO_penance&mouseover.health.pct<=config.MO_penance_treshold
+    - flash_heal.mouseover,if=config.MO_flash_heal&mouseover.range&mouseover.health.pct<=config.MO_flash_heal_treshold
   mouseover_enemy:
-    - shadow_word_pain.mouseover,if=config.MO_shadow_word_pain&mouseover.enemy&mouseover.alive&mouseover.debuff.shadow_word_pain
+    - shadow_word_pain.mouseover,if=config.MO_enabled&config.MO_shadow_word_pain&mouseover.enemy&mouseover.alive&mouseover.exists&(config.allow_pull_with_mo|mouseover.combat)&mouseover.debuff.remains(shadow_word_pain)=0
   trinkets:
     - call_action_list,name=living_silk,if=var.trinket_living_silk
   moving:
-    - penance,cycle=members,if=cycle.health.pct<70&!var.hold_penance
-    - power_word_shield,cycle=members,if=!cycle.buff.power_word_shield.up&!cycle.buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,cycle=members,if=!cycle.buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,target=lowest,if=var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
-    - flash_heal,cycle=members,if=!cycle.buff.atonement.up&var.surge_of_light_procced
+    - penance,cycle=members,if=cycle.health.pct<70&!var.hold_penance # Hold penance if less than 2 seconds to two charges for increased Holy Ray healing
+    - power_word_shield,cycle=members,if=cycle.buff.power_word_shield.down&cycle.buff.atonement.down&(var.weal_and_woe_stacks>=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield,cycle=members,if=cycle.buff.power_word_shield.down&(var.weal_and_woe_stacks>=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield,target=lowest,if=var.weal_and_woe_stacks>=config.weal_and_woe_min_stacks|talent.void_blast
+    - flash_heal,cycle=members,if=cycle.buff.atonement.down&var.surge_of_light_procced
     - flash_heal,cycle=members,if=var.surge_of_light_procced
   pain_suppression_logic:
     - pain_suppression,name="PS Tanks",cycle=tanks,if=config.pain_suppression_usage!=0&cycle.health.pct<config.pain_suppression_threshold
@@ -209,19 +212,33 @@ lists:
     - power_word_shield,name="PW Shield (Spread Atonement)",target=lowest,if=cycle.range>0&cycle.range<=40&var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
     - flash_heal,name="Flash Heal (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.atonement.up&var.surge_of_light_procced
     - plea,name="Plea (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.atonement.up
+  core:
+    # Necessary actions
+    - call_action_list,name=sanity_checks
+    - call_action_list,name=auto_target_ranged
+    # Combat overrides.
+    - return,if=!player.combat&!((config.auto_combat.has(1)&target.quest_mob&target.enemy)|(config.auto_combat.has(2)&target.combat&target.enemy)|(config.auto_combat.has(3)&player.auto_attacking&target.enemy))                                                                                                 
+    - return,if=!player.combat&config.auto_combat.has(0)   
+    # AoE Interrupt
+    - psychic_scream,if=interrupts.8y.count>=2|interrupts.8y.stun.count>=2
+    # Target Check
+    - return,if=!target.valid&!((config.auto_combat.has(1)&target.quest_mob&target.enemy&!target.dead)|(config.auto_combat.has(2)&target.combat&target.enemy&!target.dead)|(config.auto_combat.has(3)&player.auto_attacking&target.enemy&!target.dead))
+    - return,if=!target.valid&config.auto_combat.has(0)   
+  dispels:
+    - dispel_magic,if=player.dispelable
+    - dispel_magic,cycle=members,if=cycle.dispelable
+    - purify,if=player.dispelable
+    - purify,cycle=members,if=cycle.dispelable
   main:
-    - return,if=mounted|!rotation_enabled|state.blocked_inputs
     - call_action_list,name=spell_queue
     - call_action_list,name=out_of_combat
     - angelic_feather.player,if=var.use_af
-    - shadow_word_pain.mouseover,if=config.MO_shadow_word_pain&mouseover.enemy&mouseover.alive&!mouseover.debuff.shadow_word_pain.up&config.allow_pull_with_mo    
-    - return,name="Out of combat",if=!player.combat
-    - return,name="Channeling",if=player.channeling
+    - call_action_list,name=mouseover_friendly,if=config.MO_enabled&mouseover.exists&mouseover.alive&!player.casting&!player.channeling&mouseover.friendly
+    - call_action_list,name=mouseover_enemy,if=config.MO_enabled&mouseover.exists&mouseover.alive&!player.casting&!player.channeling&mouseover.enemy
+    - call_action_list,name=core
     - call_action_list,name=pain_suppression_logic
     - call_action_list,name=moving,if=player.moving
     - call_action_list,name=high_prio
-    - call_action_list,name=mouseover_friendly,if=config.MO_enabled&mouseover.exists&mouseover.alive&!player.casting&!player.channeling&mouseover.friendly
-    - call_action_list,name=mouseover_enemy,if=config.MO_enabled&mouseover.exists&mouseover.alive&!player.casting&!player.channeling&mouseover.enemy
     - call_action_list,name=trinkets
-    - call_action_list,name=atonement_spread,if=var.missing_atonement>6
+    - call_action_list,name=atonement_spread,if=(player.in_raid&var.missing_atonement>config.atonement_spread_raid)|var.missing_atonement>config.atonement_spread_party
     - call_action_list,name=offensive,if=target.valid
