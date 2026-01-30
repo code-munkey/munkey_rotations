@@ -188,6 +188,37 @@ config:
       - label: "Auto Pain Suppression"
         value: 3
     default: [0,1,2]
+  floodgate_features:
+    label: "Floodgate"
+    type: multi_select
+    options:
+      - label: "Auto Leap of Faith"
+        value: 1
+      - label: "Auto Gel Dispel"
+        value: 2
+      - label: "M.O.M.M.A Protection"
+        value: 3
+    default: [0,1,3]
+  floodgate_auto_gel_delay:
+    label: "Floodgate Auto Gel Delay"
+    min: 0
+    max: 3
+    default: 2
+  floodgate_auto_leap_scenarios:
+    label: "Floodgate Auto LoF"
+    type: multi_select
+    options:
+      - label: "Nailed in fire"
+        value: 1
+      - label: "Stunned in electrified water"
+        value: 2
+      - label: "Eating saws or flamethrower"
+        value: 3
+      - label: "Narnia @ MOMMA"
+        value: 4
+      - label: "Yoink & Cleanse"
+        value: 5
+    default: [0,1,2,3]
 
 variables:
   ## Use Angelic Feather if moving for treshhold (2) seconds and no feather on me and in combat or out of combat depending on setting
@@ -227,6 +258,10 @@ variables:
   ## Ara Kara - Ki'katal
   kikatal_erupting_webs_danger: boss_fight&target.picid=231649&target.casting.erupting_webs&target.casting.erupting_webs.remains<0.1
   kikatal_cosmic_singularity_danger: boss_fight&target.picid=231649&target.casting.cosmic_singularity&target.casting.cosmic_singularity.remains<0.2
+  fg_leap: config.floodgate_features.has(1)&cooldown.leap_of_faith.ready
+  fg_gel_dispel: config.floodgate_features.has(2)
+  fg_momma_protection: config.floodgate_features.has(3)
+  leap_ready: cooldown.leap_of_faith.ready
 
 lists:
   racials:
@@ -255,7 +290,6 @@ lists:
   high_prio:
     - ultimate_penitence,if=group.count(cycle.health.pct<=config.ultimate_penitence_hp_treshold)>=config.ultimate_penitence_members
     - desperate_prayer,if=health.pct<=config.desperate_prayer_threshold
-    - penance,cycle=members,if=health.pct<=config.MO_penance_treshold&!var.hold_penance
   mouseover_friendly:
     - pain_suppression.mouseover,if=player.combat&config.MO_pain_suppression&mouseover.health.pct<=config.pain_suppression_threshold&mouseover.buff.remains(pain_suppression)=0
     - penance.mouseover,if=config.MO_penance&mouseover.health.pct<=config.MO_penance_treshold
@@ -308,7 +342,30 @@ lists:
     - call_action_list,name=ara_kara
     - call_action_list,name=floodgate
   floodgate:
-    - 
+    ## Trash
+    ## Demolition Duo
+    - purify,cycle=members,if=var.fg_gel_dispel&prev_gcd.1.leap_of_faith&cycle.debuff.kinetic_explosive_gel.up
+    - purify,cycle=members,if=var.fg_gel_dispel&!prev_gcd.1.leap_of_faith&cycle.debuff.kinetic_explosive_gel.elapsed>config.floodgate_auto_gel_delay
+    ## Big MOMMA
+    ## Pull them close if far away
+    - call_action_list,name=floodgate_momma,if=var.fg_momma_protection&target.casting.spell(460156)
+  floodgate_leap:
+    - leap_of_faith,global_delay=300,cycle=members,if=var.fg_leap&config.floodgate_auto_leap_scenarios.has(5)&cycle.debuff.kinetic_explosive_gel.up
+    ## Pull them if nailed in fire
+    - leap_of_faith,cycle=members,if=var.fg_leap&config.floodgate_auto_leap_scenarios.has(1)&leap_ready&cycle.range<=40&cycle.debuff.surveyed_ground.up&cycle.debuff.nailed.up
+    ## Pull them if stnading in saws or flamethrower for too long
+    - leap_of_faith,cycle=members,if=var.fg_leap&config.floodgate_auto_leap_scenarios.has(3)&cycle.range<=40&cycle.debuff.shreddation_sawblade.elapsed>2
+    - leap_of_faith,cycle=members,if=var.fg_leap&config.floodgate_auto_leap_scenarios.has(3)&cycle.range<=40&cycle.debuff.flamethrower.elapsed>2
+    ## Pull them if stunned in electrified water
+    - leap_of_faith,cycle=members,if=var.fg_leap&config.floodgate_auto_leap_scenarios.has(2)&cycle.range<=40&cycle.debuff.shock_water.up&cycle.debuff.leaping_spark.up
+  floodgate_momma:
+    - leap_of_faith,cycle=members,if=var.fg_leap&config.floodgate_auto_leap_scenarios.has(4)&cycle.range>30
+    ## Spread atonement if lacking
+    - call_action_list,name=atonement_spread,if=var.missing_atonement>0
+    ## Put up some shields if available
+    - power_word_shield,cycle=members,if=cooldown.power_word_shield.ready&cycle.range<=30&cycle.range>0&!cycle.buff.power_word_shield.up
+    ## Start casting Ult. Pen. if ppl still low
+    - ultimate_penitence,if=group.count(cycle.health.pct<=50)>=3
   ara_kara:
     ## Trash
     - dispel_magic,cycle=tanks,if=cycle.debuff.tainted_blood.stack>=12|mouseover.exists&mouseover.friendly&mouseover.debuff.tainted_blood.stack>=8
@@ -336,7 +393,7 @@ lists:
     - call_action_list,name=core
     - call_action_list,name=racials
     - call_action_list,name=auto_pi,if=config.cd_aware_pi=3|(config.cd_aware_pi=2&boss_fight)
-    - call_action_list,name=mythic_plus,if=player.in_mythic_plus
+    - call_action_list,name=mythic_plus,if=player.in_mythic_plus&var.use_amp
     - call_action_list,name=pain_suppression_logic
     - call_action_list,name=moving,if=player.moving
     - call_action_list,name=high_prio
