@@ -196,9 +196,11 @@ variables:
     |(config.angelic_feather_usage=3&!player.combat)
     |(config.angelic_feather_usage=4))&!buff.angelic_feather.up&moving.time>=config.angelic_feather_movement_time
   ## Someone within 40 yards without my Atonement
-  missing_atonement: group.count(cycle.buff.atonement.down&cycle.range<=40)
+  instant_spread_available: (buff.evangelism.stack>0|cooldown.evangelism.ready)
+  atonement_refresh_timing: action.power_word_radiance.execute_time*(!var.instant_spread_available)
+  missing_atonement: group.count(cycle.buff.remains(atonement)<=var.atonement_refresh_timing&cycle.range<=40&cycle.range>0)+(buff.atonement.remains<=var.atonement_refresh_timing)
   ## Someone within 40 yards without PW:F
-  missing_pwf: group.count(cycle.buff.power_word_fortitude.down&cycle.range<=40)>0
+  missing_pwf: group.count(cycle.buff.power_word_fortitude.down&cycle.range>0&cycle.range<=40)+(buff.power_word_fortitude.down)>0
   ## MO is over a friendly player within 40 yards
   friendly_and_valid_mo: mouseover.exists&mouseover.alive&mouseover.friendly&mouseover.range<=40
   ## Trinket 1 is living silk
@@ -277,12 +279,12 @@ lists:
   atonement_spread:
     - evangelism.player,name="Evangelism (Spread Atonement)",if=var.missing_atonement>1
     - power_word_radiance.player,name="PW Radiance (Spread Atonement)",if=var.missing_atonement>1,delay=100
-    - penance,name="Penance (Spread Atonement)",cycle=members,if=cycle.range<=40&cycle.buff.atonement.down
-    - power_word_shield,name="PW Shield (Weak and Woe, not shielded)",cycle=members,if=cycle.range<=40&!cycle.buff.power_word_shield.up&!cycle.buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,name="PW Shield (Weal and Woe, alredy shielded)",cycle=members,if=cycle.range<=40&!cycle.buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,name="PW Shield (Spread Atonement)",target=lowest,if=cycle.range<=40&var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
-    - flash_heal,name="Flash Heal (Spread Atonement)",cycle=members,if=cycle.range<=40&!cycle.buff.atonement.up&var.surge_of_light_procced
-    - plea,name="Plea (Spread Atonement)",cycle=members,if=cycle.range<=40&!cycle.buff.atonement.up
+    - penance,name="Penance (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&cycle.buff.atonement.down
+    - power_word_shield,name="PW Shield (Weak and Woe, not shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&!cycle.buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield,name="PW Shield (Weal and Woe, alredy shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield,name="PW Shield (Spread Atonement)",target=lowest,if=cycle.range>0&cycle.range<=40&var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
+    - flash_heal,name="Flash Heal (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.atonement.up&var.surge_of_light_procced
+    - plea,name="Plea (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.atonement.up
   core:
     # Necessary actions
     - call_action_list,name=sanity_checks
@@ -304,6 +306,9 @@ lists:
     - purify,cycle=members,if=cycle.dispelable.list
   mythic_plus:
     - call_action_list,name=ara_kara
+    - call_action_list,name=floodgate
+  floodgate:
+    - 
   ara_kara:
     ## Trash
     - dispel_magic,cycle=tanks,if=cycle.debuff.tainted_blood.stack>=12|mouseover.exists&mouseover.friendly&mouseover.debuff.tainted_blood.stack>=8
