@@ -1,111 +1,66 @@
-# Discipline Priest Rotation (256)
-A comprehensive Discipline Priest rotation for healing and damage optimization with extensive configuration options.
+# The Benevolent Kidnapper 👼🚑
+### *Discipline Priest Rotation by munkey*
 
-## Overview
-This rotation provides automated healing, damage dealing, and utility management for Discipline Priests. It focuses on maintaining Atonement buffs, efficient healing through damage, and proper cooldown usage.
+Welcome to **The Benevolent Kidnapper**, the only rotation that acknowledges the fundamental truth of World of Warcraft: **Your allies are trying to kill themselves, and it is your divine duty to stop them.**
 
-## KNOWN ISSUES & FIXES
-- **Pain Suppressing wrong target** If you have PS MO enabled, it can sometimes cast it on yourself unless you modify the macro for PS to: /cast [@mouseover, exists] [@target] Pain Suppression
-- **MO Pull and SW:P Spread not working** For the pull with MO and MO spread of SW: Pain you need to modify that one to /cast [@mouseover, exists][@target]  Shadow Word: Pain
+This isn't just a rotation; it's a custodial sentence for your party members.
 
-## Key Features
-- **Atonement Management**: Automatically spreads and maintains Atonement buffs
-- **Smart Healing**: Priority-based healing with configurable thresholds
-- **Mouseover Support**: Full mouseover functionality for targeted healing/damage
-- **Movement Optimization**: Special handling for casting while moving
-- **Cooldown Management**: Intelligent use of Pain Suppression and other cooldowns
-- **Trinket Integration**: Automated Living Silk trinket usage
+## 🌟 Signature Feature: Yoink & Cleanse™ Technology
+Why ask a DPS to move out of the fire when you can just *drag* them to safety against their will? 
+*   **Auto Leap of Faith**: We monitor your party's questionable positioning choices in real-time. 
+*   **Floodgate & Ara-Kara Logic**: 
+    *   Standing in saws? **YOINK.**
+    *   Stunned in electrified water? **YOINK.**
+    *   Wandered off to Narnia during the MOMMA fight? **YOINK.**
+    *   Did you just get "Nailed" in fire? **YOINK.**
 
-## Configuration Options
-### Targeting & Combat
-- **Auto-target**: Automatically target enemies when none selected
-- **Pull with MO**: Allow pulling enemies with mouseover Shadow Word: Pain
-- **Enable Mouseover**: Toggle mouseover functionality
+We call it "repositioning." They call it "disorienting." We agree to disagree.
 
-### Pain Suppression
-- **Threshold**: Health percentage to trigger Pain Suppression (10-60%)
-- **Usage**: Who to use Pain Suppression on (Tank/Healer/Everyone/Disabled)
-- **MO Pain Suppression**: Use Pain Suppression on mouseover targets
+## 🛠️ Features & Configuration
 
-### Healing Thresholds
-- **Ultimate Penitence**: Number of members below 50% to trigger (1-5)
-- **Desperate Prayer**: Health percentage for self-heal (10-70%)
-- **MO Penance**: Mouseover Penance threshold (default: 60%)
-- **MO Flash Heal**: Mouseover Flash Heal threshold (default: 40%)
-- **OOC Penance**: Out-of-combat Penance threshold (default: 95%)
-- **OOC Flash Heal**: Out-of-combat Flash Heal threshold (default: 70%)
+### 🛡️ Pain Suppression: The "Who Gets to Live" Lottery
+Configurable priorities for your `Pain Suppression`. 
+*   **Default**: Tank & Healer (read: You).
+*   **Optional**: DPS. (enable this if you're feeling generous, or if one of them is actually pumping).
 
-### Damage & Utility
-- **SW: Death Threshold**: Prevent Shadow Word: Death usage when player below HP%(default: 50%)
-- **Weal and Woe Stacks**: Minimum stacks for Power Word: Shield (Only applies to Oracle) (0-10)
+### 🚀 Ultimate Penitence: The "Fine, I'll Do It Myself" Button
+We don't waste the big floaty cooldown on paper cuts.
+*   **Smart Triggers**: Configurable to trigger only when X number of allies drop below a critical health threshold.
+*   *Result*: 3 people dying? It's flying time.
 
-### Movement & Utility
-- **Angelic Feather**: When to use (None/Combat/Out of Combat/Always)
-- **Movement Time**: Seconds of movement before using Angelic Feather (0-4s)
+### ⚡ Power Infusion: CD Aware PI
+We don't just throw PI at whoever whispers you first. This rotation tracks major cooldowns (Avatar, Combustion, Wings, etc.) and aligns your PI perfectly. 
+*   *Translation:* You look like a god-tier coordinator without saying a word.
 
-### Trinkets
-- **Living Silk Usage**: On Cooldown/X Members below %/Disabled
-- **Members Threshold**: Number of low-health members to trigger (1-5)
-- **Percentage Threshold**: Health percentage options (30-90%)
+### 🪶 Angelic Feather: Cardio is for Peasants
+Why walk when you can sprint?
+*   **Auto-Feather**: If you're moving for more than 2 seconds (configurable), we automatically drop a feather under your feet.
+*   *Result*: You are now the fastest thing in the instance.
 
-## Rotation Priority
-### High Priority
-1. **Ultimate Penitence** - When configured number of members below 50%
-2. **Desperate Prayer** - Emergency self-heal
-3. **High-priority Penance** - For members below threshold
-4. **Pain Suppression** - Emergency external cooldown if member below treshold
+### 😱 Psychic Scream: Mandatory Social Distancing
+Too many enemies in your personal bubble?
+*   **Panic Button**: If 2+ enemies are within 8 yards (or you're getting stunned), we scream at them until they leave.
 
-### Mouseover Actions
-- **Pain Suppression** - Emergency external cooldown if MO target is below treshold
-- **Penance** - Targeted healing
-- **Flash Heal** - Quick targeted heal
-- **Shadow Word: Pain** - DoT application on enemies
-- **Purify** - Dispel harmful effects (Not yet working.)
+### 🕸️ Spider-Man Mode (Living Silk)
+Specific support for the [**Loomithar's Living Silk**](https://www.wowhead.com/item=242393/loomithars-living-silk) trinket.
+*   **Smart Usage**: Can be set to hold for high burst windows or automatically fire when your team is critically low.
+*   *Translation:* Min-maxing your trinkets so you don't have to.
 
-### Atonement Management
-1. **Evangelism** - Spread existing Atonements when multiple missing
-2. **Power Word: Radiance** - AoE Atonement application
-3. **Power Word: Shield** - Single-target Atonement with Weal and Woe consideration
-4. **Flash Heal** - Single-target Atonement if Surge of Light up
-5. **Plea** - Efficient single Atonement application
+### 🩸 Mythic+ Automation
+We've hard-coded specific survival logic for:
+*   **Ara-Kara**: Handling Avanoxx's shenanigans, Eye of the Swarm, and Ki'katal's grasp.
+*   **Floodgate**: If there is a mechanic, we have a plan to Life Grip someone out of it.
 
-### Damage Rotation
-1. **Shadow Word: Pain** - Maintain DoT on primary target
-2. **Penance** - Priority damage spell (with charge management)
-3. **Mind Blast** - Filler damage
-4. **Shadow Word: Death** - Execute or with Void Blast talent
-5. **Void Blast/Smite** - Basic filler spells
+### 🖱️ Mouseover Mastery
+Full suite of mouseover support because clicking frames is so 2008.
+*   **Pull with MO**: For when the tank is moving too slow. (Off by default, for your own safety).
+*   **MO Penance/Flash Heal/PS**: Just point and shoot.
 
-### Movement Handling
-- **Penance** - Instant healing while moving
-- **Power Word: Shield** - Instant Atonement application
-- **Flash Heal** - With Surge of Light procs only
+## 📝 How to Use
+1.  Load the rotation.
+2.  Select your victims (party members).
+3.  Let the bot handle the atonement spreading while you focus on judging your teammates'.
+4.  Enjoy the silence as they realize they can't stand in the bad anymore.
 
-## Special Features
-### Smart Cooldown Usage
-- Pain Suppression automatically targets tanks, healers, or all members based on configuration
-- Trinket usage tied to group health status or cooldown availability
-
-### Proc Management
-- **Surge of Light**: Prioritizes Flash Heal usage during movement
-- **Power of the Dark Side**: Enhances Penance usage
-- **Weal and Woe**: Optimizes Power Word: Shield timing
-
-### Out-of-Combat Behavior
-- Maintains group health with configurable thresholds
-- Automatic Angelic Feather usage for movement speed
-
-## Usage Tips
-1. **Configure thresholds** based on content difficulty and group composition
-2. **Enable mouseover** for manual override capabilities
-3. **Adjust Pain Suppression** settings for tank vs. raid healing scenarios
-4. **Set movement options** based on encounter mobility requirements
-5. **Configure trinket usage** for optimal cooldown alignment
-
-## Requirements
-- Discipline Priest specialization
-- Compatible rotation addon/framework
-- Proper keybinds for all configured spells
-
-## Version
-Version 1 - Latest rotation with comprehensive configuration options and smart priority handling.
+---
+*"I didn't save your life because I like you. I saved you because your repair bill affects my clear time."*
