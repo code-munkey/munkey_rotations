@@ -1,4 +1,4 @@
-version: 1.0
+version: 1.4
 author: munkey
 spec: 256
 name: Discipline
@@ -38,7 +38,7 @@ config:
   arcane_torrent_treshold:
     label: Arcane Torrent Mana%
     default: 70
-  auto_pi:
+  cd_aware_pi:
     label: CD Aware PI
     type: dropdown
     options:
@@ -196,11 +196,11 @@ variables:
     |(config.angelic_feather_usage=3&!player.combat)
     |(config.angelic_feather_usage=4))&!buff.angelic_feather.up&moving.time>=config.angelic_feather_movement_time
   ## Someone within 40 yards without my Atonement
-  missing_atonement: group.count(cycle.buff.atonement.down.mine&cycle.range<=40&cycle.range>0)
+  missing_atonement: group.count(cycle.buff.atonement.down&cycle.range<=40)
   ## Someone within 40 yards without PW:F
-  missing_pwf: group.count(cycle.buff.power_word_fortitude.down&cycle.range>0&cycle.range<=40)>0|buff.power_word_fortitude.down
+  missing_pwf: group.count(cycle.buff.power_word_fortitude.down&cycle.range<=40)>0|buff.power_word_fortitude.down
   ## MO is over a friendly player within 40 yards
-  friendly_and_valid_mo: mouseover.exists&mouseover.alive&mouseover.friendly&mouseover.range>0&mouseover.range<=40
+  friendly_and_valid_mo: mouseover.exists&mouseover.alive&mouseover.friendly&mouseover.range<=40
   ## Trinket 1 is living silk
   trinket1_living_silk: trinket_1.id=242393
   ## Trinket 2 is living silk
@@ -234,7 +234,7 @@ lists:
     - fireblood,if=player.dispelable.elapsed>0.4
     - hyper_organic_light_originator,if=!player.tank&(player.indungeon|!player.inraid)&target.combat&!target.targeting_party
   auto_pi:
-    - power_infusion,cycle=dps,if=((cycle.buff.avatar.remains>15)|(cycle.buff.recklessness.remains>8)|((cycle.buff.demonic_art_overlord.up|cycle.buff.demonic_art_mother_of_chaos.up|cycle.buff.demonic_art_pitlord.up)&cycle.buff.malevolence.remains>10)|(cycle.buff.tyrants_oblation.remains>10)|(cycle.buff.malevolence.remains>15)|(cycle.buff.ascendance.remains>10)|(cycle.buff.shadow_blades.remains>12)|(cycle.buff.adrenaline_rush.remains>10)|(cycle.buff.deathmark.remains>10&cycle.buff.kingsbane.remains>10)|(cycle.buff.voidform.remains>15)|(cycle.buff.avenging_wrath.remains>15)|(cycle.buff.courage_of_the_white_tiger.remains>29)|(cycle.buff.combustion.remains>8)|(cycle.buff.arcane_surge.remains>14)|(cycle.buff.takedown.remains>6)|(cycle.buff.trueshot.remains>10)|(cycle.buff.bestial_wrath.remains>10|cycle.buff.bloodshed.remains>10)|(cycle.buff.dragonrage.remains>10)|(cycle.buff.incarnation_avatar_of_ashamane.remains>10|cycle.buff.berserk.remains>10)|(cycle.buff.incarnation_chosen_of_elune.remains>10|cycle.buff.celestial_alignment.remains>10)|(cycle.buff.void_metamorphosis.remains>10)|(cycle.buff.metamorphosis.remains>10)|(cycle.buff.army_of_the_dead.remains>10)|(cycle.buff.pillar_of_frost.remains>10|cycle.buff.breath_of_sindragosa.remains>7))&!cycle.buff.power_infusion.up.any
+    - power_infusion,cycle=members,if=((cycle.buff.avatar.remains>15)|(cycle.buff.recklessness.remains>8)|((cycle.buff.demonic_art_overlord.up|cycle.buff.demonic_art_mother_of_chaos.up|cycle.buff.demonic_art_pitlord.up)&cycle.buff.malevolence.remains>10)|(cycle.buff.tyrants_oblation.remains>10)|(cycle.buff.malevolence.remains>15)|(cycle.buff.ascendance.remains>10)|(cycle.buff.shadow_blades.remains>12)|(cycle.buff.adrenaline_rush.remains>10)|(cycle.buff.deathmark.remains>10&cycle.buff.kingsbane.remains>10)|(cycle.buff.voidform.remains>15)|(cycle.buff.avenging_wrath.remains>15)|(cycle.buff.courage_of_the_white_tiger.remains>29)|(cycle.buff.combustion.remains>8)|(cycle.buff.arcane_surge.remains>14)|(cycle.buff.takedown.remains>6)|(cycle.buff.trueshot.remains>10)|(cycle.buff.bestial_wrath.remains>10|cycle.buff.bloodshed.remains>10)|(cycle.buff.dragonrage.remains>10)|(cycle.buff.incarnation_avatar_of_ashamane.remains>10|cycle.buff.berserk.remains>10)|(cycle.buff.incarnation_chosen_of_elune.remains>10|cycle.buff.celestial_alignment.remains>10)|(cycle.buff.void_metamorphosis.remains>10)|(cycle.buff.metamorphosis.remains>10)|(cycle.buff.army_of_the_dead.remains>10)|(cycle.buff.pillar_of_frost.remains>10|cycle.buff.breath_of_sindragosa.remains>7)&cycle.buff.power_infusion.down)
   living_silk:
     - trinket_1,if=var.trinket1_living_silk&trinket_1.ready&(config.living_silk_usage=1|var.living_silk_treshold_trigger)
     - trinket_2,if=var.trinket2_living_silk&trinket_2.ready&(config.living_silk_usage=1|var.living_silk_treshold_trigger)
@@ -276,13 +276,13 @@ lists:
     - pain_suppression,name="PS DPS",cycle=members,if=config.pain_suppression_usage=3&cycle.health.pct<config.pain_suppression_threshold
   atonement_spread:
     - evangelism.player,name="Evangelism (Spread Atonement)",if=var.missing_atonement>1
-    - power_word_radiance.player,name="PW Radiance (Spread Atonement)",if=var.missing_atonement>10,delay=100
-    - penance,name="Penance (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&cycle.buff.atonement.down
-    - power_word_shield,name="PW Shield (Weak and Woe, not shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&!cycle.buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,name="PW Shield (Weal and Woe, alredy shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,name="PW Shield (Spread Atonement)",target=lowest,if=cycle.range>0&cycle.range<=40&var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
-    - flash_heal,name="Flash Heal (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.atonement.up&var.surge_of_light_procced
-    - plea,name="Plea (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.atonement.up
+    - power_word_radiance.player,name="PW Radiance (Spread Atonement)",if=var.missing_atonement>1,delay=100
+    - penance,name="Penance (Spread Atonement)",cycle=members,if=cycle.range<=40&cycle.buff.atonement.down
+    - power_word_shield,name="PW Shield (Weak and Woe, not shielded)",cycle=members,if=cycle.range<=40&!cycle.buff.power_word_shield.up&!cycle.buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield,name="PW Shield (Weal and Woe, alredy shielded)",cycle=members,if=cycle.range<=40&!cycle.buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield,name="PW Shield (Spread Atonement)",target=lowest,if=cycle.range<=40&var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
+    - flash_heal,name="Flash Heal (Spread Atonement)",cycle=members,if=cycle.range<=40&!cycle.buff.atonement.up&var.surge_of_light_procced
+    - plea,name="Plea (Spread Atonement)",cycle=members,if=cycle.range<=40&!cycle.buff.atonement.up
   core:
     # Necessary actions
     - call_action_list,name=sanity_checks
@@ -323,18 +323,18 @@ lists:
     - pain_suppression,cycle=members,if=var.use_amp&config.ara_kara_kikatal_features.has(3)&var.kikatal_erupting_webs_danger&cycle.debuff.grasping_blood.up
     - power_word_shield,cycle=members,if=var.use_amp&config.ara_kara_kikatal_features.has(1)&var.kikatal_erupting_webs_danger&cycle.debuff.grasping_blood.up
   main:
-    - return,if=player.dead|!state.rotation
+    - return,if=player.dead|!state.rotation|player.mounted
     - call_action_list,name=out_of_combat
     - angelic_feather.player,if=var.use_af
     - call_action_list,name=mouseover_friendly,if=config.MO_enabled&mouseover.exists&mouseover.alive&!player.casting&!player.channeling&mouseover.friendly
     - call_action_list,name=mouseover_enemy,if=config.MO_enabled&mouseover.exists&mouseover.alive&!player.casting&!player.channeling&mouseover.enemy
     - call_action_list,name=core
     - call_action_list,name=racials
-    - call_action_list,name=auto_pi,if=config.auto_pi=3|(config.auto_pi=2&boss_fight)
+    - call_action_list,name=auto_pi,if=config.cd_aware_pi=3|(config.cd_aware_pi=2&boss_fight)
     - call_action_list,name=mythic_plus,if=player.in_mythic_plus
     - call_action_list,name=pain_suppression_logic
     - call_action_list,name=moving,if=player.moving
     - call_action_list,name=high_prio
     - call_action_list,name=trinkets
-    - call_action_list,name=atonement_spread,if=(player.in_raid&var.missing_atonement>config.atonement_spread_raid)|var.missing_atonement>config.atonement_spread_party
+    - call_action_list,name=atonement_spread,if=(player.inraid&var.missing_atonement>config.atonement_spread_raid)|(var.missing_atonement>config.atonement_spread_party|config.atonement_spread_party=0)
     - call_action_list,name=offensive,if=target.valid
