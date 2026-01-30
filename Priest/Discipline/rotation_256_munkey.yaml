@@ -229,7 +229,9 @@ variables:
   ## Someone within 40 yards without my Atonement
   instant_spread_available: (buff.evangelism.stack>0|cooldown.evangelism.ready)
   atonement_refresh_timing: action.power_word_radiance.execute_time*(!var.instant_spread_available)
-  missing_atonement: group.count(cycle.buff.remains(atonement)<=var.atonement_refresh_timing&cycle.range<=40&cycle.range>0)+(buff.atonement.remains<=var.atonement_refresh_timing)
+  missing_atonement: 
+    group.count(cycle.buff.atonement.remains<=var.atonement_refresh_timing&cycle.range<=40&cycle.range>0)+
+    (buff.atonement.remains<=var.atonement_refresh_timing)
   ## Someone within 40 yards without PW:F
   missing_pwf: group.count(cycle.buff.power_word_fortitude.down&cycle.range>0&cycle.range<=40)+(buff.power_word_fortitude.down)>0
   ## MO is over a friendly player within 40 yards
