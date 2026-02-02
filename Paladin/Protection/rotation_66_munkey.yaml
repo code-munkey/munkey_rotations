@@ -1,7 +1,7 @@
 version: 1
 author: munkey
 spec: 66
-name: Hammer time
+name: Protection
 description: "An early prototype for Protection Paladin. Mouseover pulling is currently disabled due to missing default binding."
 entry: main
 

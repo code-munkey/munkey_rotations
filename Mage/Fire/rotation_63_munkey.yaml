@@ -1,9 +1,10 @@
 version: 1
 author: munkey
+blocked: true
 spec: 63
 entry: main
 name: Munkey Fire Mage TWW
-description: "Fire Mage rotation for TWW 11.0.7. Supports Sun King's Blessing and Frostfire Hero Talents. Includes Combustion management and SKB hardcast logic."
+description: "F"
 
 # Morphing logic for Hero Talents and Leveling
 morphs:
