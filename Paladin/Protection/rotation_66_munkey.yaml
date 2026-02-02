@@ -81,15 +81,15 @@ variables:
   auto_aura_needs_swap: 
     (mounted&buff.crusader_aura.down)|
     (!mounted&buff.devotion_aura.down)
-  # target_interrupt_pct_passed: target.casting.rooted.elapsed>(((target.casting.remains+target.casting.elapsed)*config.interrupt_pct)/100)
-  # focus_interrupt_pct_passed: focus.casting.rooted.elapsed>(((focus.casting.remains+focus.casting.elapsed)*config.interrupt_pct)/100)
-  # mo_interrupt_pct_passed: mouseover.casting.rooted.elapsed>(((mouseover.casting.remains+mouseover.casting.elapsed)*config.interrupt_pct)/100)
-  # should_interrupt_target:
-  #   (config.interrupt_target|config.interrupt_all)&target.casting.interruptible&var.target_interrupt_pct_passed
-  # should_interrupt_focus:
-  #   (config.interrupt_focus|config.interrupt_all)&focus.casting.interruptible&var.focus_interrupt_pct_passed
-  # should_interrupt_mo:
-  #   (config.interrupt_mouseover|config.interrupt_all)&mouseover.casting.interruptible&var.mo_interrupt_pct_passed
+  target_interrupt_pct_passed: target.casting.interruptible.elapsed>(((target.casting.remains+target.casting.elapsed)*config.interrupt_pct)/100)
+  focus_interrupt_pct_passed: focus.casting.interruptible.elapsed>(((focus.casting.remains+focus.casting.elapsed)*config.interrupt_pct)/100)
+  mo_interrupt_pct_passed: mouseover.casting.interruptible.elapsed>(((mouseover.casting.remains+mouseover.casting.elapsed)*config.interrupt_pct)/100)
+  should_interrupt_target:
+    (config.interrupt_target|config.interrupt_all)&target.casting.interruptible&var.target_interrupt_pct_passed
+  should_interrupt_focus:
+    (config.interrupt_focus|config.interrupt_all)&focus.casting.interruptible&var.focus_interrupt_pct_passed
+  should_interrupt_mo:
+    (config.interrupt_mouseover|config.interrupt_all)&mouseover.casting.interruptible&var.mo_interrupt_pct_passed
 lists:
   opener:
     - consecration,if=target.range=5&!buff.consecration.up&!player.moving
@@ -111,14 +111,10 @@ lists:
   #  - avengers_shield,range_check=mouseover,if=cooldown.avengers_shield.ready
   #  - divine_toll,range_check=mouseover,if=cooldown.divine_toll.ready
   interrupts:
-    - rebuke,if=interrupts.target.ready
-    - rebuke.focus,if=interrupts.interrupts.focus.ready
-    - rebuke.mouseover,if=interrupts.mouseover.ready
-    - hammer_of_justice,if=interrupts.target.stun.ready
-    # - rebuke,if=var.should_interrupt_target
-    # - rebuke.focus,if=var.should_interrupt_focus
-    # - rebuke.mouseover,if=var.should_interrupt_mo
-    # - hammer_of_justice,if=var.should_interrupt_target
+    - rebuke,if=interrupts.target.ready&var.should_interrupt_target
+    - rebuke.focus,if=interrupts.interrupts.focus.ready&var.should_interrupt_focus
+    - rebuke.mouseover,if=interrupts.mouseover.ready&var.should_interrupt_mo
+    - hammer_of_justice,if=interrupts.target.stun.ready&var.should_interrupt_target
   rotation:
     - call_action_list,name=opener,if=!var.should_build
     - call_action_list,name=builders,if=var.should_build
