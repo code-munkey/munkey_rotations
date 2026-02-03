@@ -1,0 +1,139 @@
+version: 1
+author: munkey
+spec: 261
+name: Subtlety
+description: "An early prototype for Subtlety Rogue."
+
+morphs:
+    backstab: gloomblade
+    eviscerate: coup_de_grace
+
+config:
+    apply_poisons:
+        section: "Poisons"
+        label: "Auto Poison"
+        type: checkbox
+        default: true
+    apply_poisons_ooc_only:
+        section: "Poisons"
+        label: "Only OOC"
+        type: checkbox
+        default: true
+    lethal_poison:
+        section: "Poisons"
+        label: "Lethal Poisions"
+        type: dropdown
+        options:
+            - label: "None"
+              value: 0
+            - label: "Instant Poison"
+              value: 1
+            - label: "Wound Poison"
+              value: 2
+        default: 1
+    non_lethal_poison:
+        section: "Poisons"
+        label: "Non-Lethal Poisions"
+        type: dropdown
+        options:
+            - label: "None"
+              value: 0
+            - label: "Crippling Poison"
+              value: 1
+            - label: "Atrophic Poison"
+              value: 2
+        default: 1
+    auto_stealth:
+        section: "QoL"
+        label: "Auto-stealth"
+        type: checkbox
+        default: true
+    crimson_vial_pct:
+        section: "QoL"
+        label: "Crimson Vial HP%"
+        default: 35
+
+    shadowstep_targets:
+        section: "Shadowstep Behaviour"
+        label: "Targets"
+        type: multi_select
+        options:
+            - label: "Friendly"
+              value: 1
+            - label: "Enemy"
+              value: 2
+        default: [0,1]
+    shadowstep_min_range:
+        section: "Shadowstep Behaviour"
+        label: "Min. range"
+        min: 10
+        max: 25
+        default: 15
+    shadowstep_max_range:
+        section: "Shadowstep Behaviour"
+        label: "Max. range"
+        min: 15
+        max: 25
+        default: 25
+    shadowstep_only_within_first:
+        section: "Shadowstep Behaviour"
+        label: "Only within first X Sec"
+        min: 0
+        max: 20
+        default: 5
+
+variables:
+    target_interrupt_pct_passed: target.casting.interruptible.elapsed>(((target.casting.remains+target.casting.elapsed)*config.interrupt_pct)/100)
+    focus_interrupt_pct_passed: focus.casting.interruptible.elapsed>(((focus.casting.remains+focus.casting.elapsed)*config.interrupt_pct)/100)
+    mo_interrupt_pct_passed: mouseover.casting.interruptible.elapsed>(((mouseover.casting.remains+mouseover.casting.elapsed)*config.interrupt_pct)/100)
+    should_interrupt_target: (config.interrupt_target|config.interrupt_all)&target.casting.interruptible&var.target_interrupt_pct_passed
+    should_interrupt_focus: (config.interrupt_focus|config.interrupt_all)&focus.casting.interruptible&var.focus_interrupt_pct_passed
+    should_interrupt_mo: (config.interrupt_mouseover|config.interrupt_all)&mouseover.casting.interruptible&var.mo_interrupt_pct_passed
+    friendly_shadowstep: config.shadowstep_targets.has(1)
+    enemy_shadowstep: config.shadowstep_targets.has(2)
+    shadowdancing: buff.shadow_dance.up
+    should_shadowstep: target.exists&(combat.time<=config.shadowstep_only_within_first|config.shadowstep_only_within_first=0)&
+        (var.friendly_shadowstep&target.friendly&target.range>=config.shadowstep_min_range&target.range<=config.shadowstep_max_range)|
+        (var.enemy_shadowstep&target.enemy&target.range>=config.shadowstep_min_range&target.range<=config.shadowstep_max_range)
+
+lists:
+    builders:
+        - shadowstrike,if=var.shadowdancing&enemies.combat.8y<=2
+        - shuriken_storm,if=enemies.combat.8y>2
+        - backstab,if=!var.shadowdancing&enemies.combat.8y=1
+    finishers:
+        - secret_technique,if=var.shadowdancing
+        - eviscerate,if=enemies.combat.8y=1|buff.coup_de_grace.up|(talent.darkest_night&target.debuff.deathstalkers_mark.down)
+        - black_powder
+    cooldowns:
+        - shadow_dance,if=combo_points<=1&(cooldown.secret_technique.ready|buff.shadow_blades.up)&!var.shadowdancing
+        - shadow_blades,if=cooldown.shadow_dance.ready
+        - vanish,if=combo_points<=1&!var.shadowdancing
+        - goremaws_bite,if=combo_points<=3&!var.shadowdancing
+    interrupts:
+        - kick,if=interrupts.target.ready&var.should_interrupt_target
+        - kick.focus,if=interrupts.interrupts.focus.ready&var.should_interrupt_focus
+        - kick.mouseover,if=interrupts.mouseover.ready&var.should_interrupt_mo
+        - blind,if=interrupts.target.stun.ready&var.should_interrupt_target
+        - cheap_shot,if=interrupts.target.stun.ready&var.should_interrupt_target
+        - kidney_shot,if=interrupts.target.stun.ready&var.should_interrupt_target
+    apply_poisons:
+        - instant_poison,range_check=none,if=config.lethal_poison=1&buff.instant_poison.remains<300
+        - wound_poison,range_check=none,if=config.lethal_poison=2&buff.wound_poison.remains<300
+        - crippling_poison,range_check=none,if=config.non_lethal_poison=1&buff.crippling_poison.remains<300
+        - atrophic_poison,range_check=none,if=config.non_lethal_poison=2&buff.atrophic_poison.remains<300
+    main:
+    - return,if=!state.rotation|mounted
+    - stealth,range_check=none,if=!buff.stealth.up&!player.combat
+    - call_action_list,name=spell_queue
+    - call_action_list,name=apply_poisons,if=config.apply_poisons&(!player.combat&config.apply_poisons_ooc_only)
+    - call_action_list,name=sanity_checks
+    - call_action_list,name=auto_target
+    - return,if=!player.combat
+    - shadowstep,if=var.should_shadowstep
+    - crimson_vial,if=health.pct<=config.crimson_vial_pct
+    - call_action_list,name=interrupts
+    - call_action_list,name=cooldowns
+    - call_action_list,name=finishers,if=combo_points>=6
+    - call_action_list,name=builders
+    
