@@ -1,6 +1,7 @@
 version: 1.1
 author: munkey
 spec: 250
+blocked: true
 name: "Bloody Hell M+"
 description: "Blood Death Knight Rotation (Deathbringer Focus)"
 

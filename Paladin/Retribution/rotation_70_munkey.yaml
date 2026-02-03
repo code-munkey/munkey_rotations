@@ -2,7 +2,7 @@ version: 1.0
 author: munkey
 spec: 70
 name: Retribution
-description: ""
+description: "Retribution Paladin rotation by munkey using patented SmartCD Technology."
 
 morphs:
     wake_of_ashes: hammer_of_light

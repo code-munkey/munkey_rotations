@@ -2,7 +2,7 @@ version: 1
 author: munkey
 spec: 261
 name: Subtlety
-description: "An early prototype for Subtlety Rogue."
+description: "Sbutlety Rogue rotation by munkey with auto-poison and smart shadowstep."
 
 morphs:
     backstab: gloomblade

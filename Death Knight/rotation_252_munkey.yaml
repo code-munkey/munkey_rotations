@@ -2,7 +2,7 @@ version: 1
 author: munkey
 spec: 252
 name: Unholy Midnight
-description: "Optimized Unholy Death Knight rotation for Midnight pre-patch. Includes Reanimation/Magus sync logic and Festering Scythe maintenance."
+description: "Optimized Unholy Death Knight rotation by munkey. Includes Reanimation/Magus sync logic and Festering Scythe maintenance."
 
 morphs:
   festering_strike: festering_scythe
