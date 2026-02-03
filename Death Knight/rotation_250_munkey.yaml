@@ -1,0 +1,97 @@
+version: 1.1
+author: munkey
+spec: 250
+name: "Bloody Hell M+"
+description: "Blood Death Knight Rotation (Deathbringer Focus)"
+
+config:
+    ttd_major_cd:
+      label: "Major CD TTD (s)"
+      default: 10
+      max: 30
+    
+    ttd_long_cd:
+      label: "Long CD TTD (s)"
+      default: 8
+      max: 30
+
+    ttd_consumption:
+      label: "Consumption TTD (s)"
+      default: 5
+      max: 20
+
+    rp_dump:
+      label: "RP Dump Threshold"
+      default: 75
+      max: 120
+
+    bone_shield_refresh:
+      label: "Bone Shield Refresh Stacks"
+      default: 5
+      max: 10
+
+    aoe_enemy_count:
+      label: "AoE Enemy Count"
+      default: 2
+      min: 2
+      max: 10
+
+variables:
+    target_interrupt_pct_passed: target.casting.interruptible.elapsed>(((target.casting.remains+target.casting.elapsed)*config.interrupt_pct)/100)
+    focus_interrupt_pct_passed: focus.casting.interruptible.elapsed>(((focus.casting.remains+focus.casting.elapsed)*config.interrupt_pct)/100)
+    mo_interrupt_pct_passed: mouseover.casting.interruptible.elapsed>(((mouseover.casting.remains+mouseover.casting.elapsed)*config.interrupt_pct)/100)
+    should_interrupt_target: (config.interrupt_target|config.interrupt_all)&target.casting.interruptible&var.target_interrupt_pct_passed
+    should_interrupt_focus: (config.interrupt_focus|config.interrupt_all)&focus.casting.interruptible&var.focus_interrupt_pct_passed
+    should_interrupt_mo: (config.interrupt_mouseover|config.interrupt_all)&mouseover.casting.interruptible&var.mo_interrupt_pct_passed
+    gathering_mobs: combat.time>0&combat.time<20&player.standing.time<0.5&buff.death_and_decay.down
+
+lists:
+    gathering_mobs:
+        - deaths_caress,if=enemies.combat.8y<2
+        - blood_boil
+        - heart_strike
+        - death_strike
+    maintenance:
+        - death_strike,if=health.pct<70
+        - marrowrend,if=buff.bone_shield.remains<3|buff.bone_shield.stack<config.bone_shield_refresh
+        - death_strike,if=runic_power>config.rp_dump
+        - death_and_decay.player,if=!buff.death_and_decay.up&player.standing.time>0.5
+    cooldowns:
+        - reapers_mark,if=target.time_to_die>config.ttd_long_cd|fight_remains>config.ttd_long_cd
+        - dancing_rune_weapon,if=target.time_to_die>config.ttd_major_cd|fight_remains>config.ttd_major_cd
+        - consumption,if=target.time_to_die>config.ttd_consumption|fight_remains>config.ttd_consumption
+        - consumption,ignore_usable=true,ignore_cooldown=true,casting_check=consumption,if=player.empower_stage>=3
+    st:
+        - blood_boil,if=!dot.blood_plague.ticking
+        - marrowrend,if=buff.exterminate.up
+        - blood_boil,if=buff.dancing_rune_weapon.up
+        - blood_boil,if=cooldown.blood_boil.charges_fractional>=1.8
+        - blood_boil,if=buff.boiling_point.up
+        - heart_strike
+        - blood_boil
+    aoe:
+        - blood_boil,if=!dot.blood_plague.ticking
+        - marrowrend,if=buff.exterminate.up
+        - blood_boil,if=buff.dancing_rune_weapon.up|cooldown.blood_boil.charges_fractional>=1.8|buff.boiling_point.up
+        - heart_strike
+        - blood_boil
+    interrupts:
+        - mind_freeze,if=interrupts.target.ready&var.should_interrupt_target
+        - mind_freeze.focus,if=interrupts.interrupts.focus.ready&var.should_interrupt_focus
+        - mind_freeze.mouseover,if=interrupts.mouseover.ready&var.should_interrupt_mo
+        - asphyxiate,if=interrupts.target.stun.ready&var.should_interrupt_target
+    main:
+        - return,if=!state.rotation
+        - call_action_list,name=sanity_checks
+        - call_action_list,name=spell_queue
+        - call_action_list,name=auto_target
+        - death_grip.mouseover,if=mouseover.exists&mouseover.alive&mouseover.enemy&mouseover.combat&(mouseover.casting|mouseover.channeling)
+        - return,if=!player.combat|!target.valid
+        - call_action_list,name=interrupts
+        - run_action_list,name=gathering_mobs,if=(combat.time>0&combat.time<20)&player.standing.time<0.5&buff.death_and_decay.down
+        - death_and_decay.player,if=!buff.death_and_decay.up&player.standing.time>0.5
+        - call_action_list,name=maintenance
+        - call_action_list,name=cooldowns
+        - call_action_list,name=aoe,if=active_enemies>=config.aoe_enemy_count
+        - call_action_list,name=st
+        
