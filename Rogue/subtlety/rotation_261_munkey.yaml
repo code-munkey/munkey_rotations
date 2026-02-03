@@ -93,8 +93,8 @@ variables:
     enemy_shadowstep: config.shadowstep_targets.has(2)
     shadowdancing: buff.shadow_dance.up
     should_shadowstep: target.exists&(combat.time<=config.shadowstep_only_within_first|config.shadowstep_only_within_first=0)&
-        (var.friendly_shadowstep&target.friendly&target.range>=config.shadowstep_min_range&target.range<=config.shadowstep_max_range)|
-        (var.enemy_shadowstep&target.enemy&target.range>=config.shadowstep_min_range&target.range<=config.shadowstep_max_range)
+        ((var.friendly_shadowstep&target.friendly&target.range>=config.shadowstep_min_range&target.range<=config.shadowstep_max_range)|
+        (var.enemy_shadowstep&target.enemy&target.range>=config.shadowstep_min_range&target.range<=config.shadowstep_max_range))
 
 lists:
     builders:
