@@ -297,7 +297,7 @@ lists:
     - flash_heal,cycle=members,if=var.surge_of_light_procced&cycle.health.pct<=config.OOC_flash_heal_treshold&!player.combat
     - penance,cycle=members,if=cycle.health.pct<=config.OOC_penance_treshold&!player.combat
     - flash_heal,cycle=members,if=cycle.health.pct<=config.OOC_flash_heal_treshold&!player.combat
-    - power_word_fortitude.player,ignore_usable=true,if=var.missing_pwf>0&(lastcast.power_word_fortitude<?config.pwf_fallback_time)>config.pwf_fallback_time
+    - power_word_fortitude,range_check=none,if=var.missing_pwf>0&(lastcast.power_word_fortitude<?config.pwf_fallback_time)>config.pwf_fallback_time
   offensive:
     - shadow_word_pain,if=debuff.shadow_word_pain.refreshable
     - penance,if=cooldown.penance.full_recharge_time=0|buff.power_of_the_dark_side.up|!cooldown.mind_blast.ready
@@ -312,9 +312,12 @@ lists:
     - pain_suppression.mouseover,if=player.combat&config.MO_pain_suppression&mouseover.health.pct<=config.pain_suppression_threshold&mouseover.buff.remains(pain_suppression)=0
     - penance.mouseover,if=config.MO_penance&mouseover.health.pct<=config.MO_penance_treshold
     - flash_heal.mouseover,if=config.MO_flash_heal&mouseover.range&mouseover.health.pct<=config.MO_flash_heal_treshold
-    - power_word_fortitude.player,if=mouseover.npcid=0&mouseover.valid&mouseover.friendly&mouseover.alive&mouseover.exists&mouseover.buff.remains(power_word_fortitude)=0
+    - power_word_fortitude,range_check=none,if=mouseover.npcid=0&mouseover.valid&mouseover.friendly&mouseover.alive&mouseover.exists&mouseover.buff.remains(power_word_fortitude)=0
   mouseover_enemy:
-    - shadow_word_pain.mouseover,if=config.MO_enabled&config.MO_shadow_word_pain&mouseover.enemy&mouseover.alive&mouseover.exists&(config.allow_pull_with_mo|mouseover.combat)&mouseover.debuff.remains(shadow_word_pain)=0
+    - shadow_word_pain,range_check=mouseover,if=config.MO_enabled
+        &config.MO_shadow_word_pain&mouseover.enemy&mouseover.alive&mouseover.exists&
+        (config.allow_pull_with_mo|mouseover.combat)
+        &mouseover.debuff.remains(shadow_word_pain)=0
   trinkets:
     - call_action_list,name=living_silk,if=var.trinket_living_silk
   moving:
@@ -329,8 +332,8 @@ lists:
     - pain_suppression,name="PS Healers",cycle=healers,if=config.pain_suppression_usage>=2&cycle.health.pct<config.pain_suppression_threshold
     - pain_suppression,name="PS DPS",cycle=members,if=config.pain_suppression_usage=3&cycle.health.pct<config.pain_suppression_threshold
   atonement_spread:
-    - evangelism.player,name="Evangelism (Spread Atonement)",if=var.missing_atonement>1
-    - power_word_radiance.player,name="PW Radiance (Spread Atonement)",if=var.missing_atonement>1,delay=100
+    - evangelism,name="Evangelism (Spread Atonement)",if=var.missing_atonement>1
+    - power_word_radiance,name="PW Radiance (Spread Atonement)",if=var.missing_atonement>1,delay=100
     - penance,name="Penance (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&cycle.buff.atonement.down
     - power_word_shield,name="PW Shield (Weak and Woe, not shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&!cycle.buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
     - power_word_shield,name="PW Shield (Weal and Woe, alredy shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
@@ -403,22 +406,16 @@ lists:
     - pain_suppression,cycle=members,if=var.use_amp&config.ara_kara_kikatal_features.has(3)&var.kikatal_erupting_webs_danger&cycle.debuff.grasping_blood.up
     - power_word_shield,cycle=members,if=var.use_amp&config.ara_kara_kikatal_features.has(1)&var.kikatal_erupting_webs_danger&cycle.debuff.grasping_blood.up
   main:
-    - target_focus,range_check=penance,if=prev_gcd.1.power_word_shield&!player.prev_gcd_1(target_focus)&!target.valid
-    - power_word_shield,cycle=tanks,members,if=cycle.buff.power_word_shield.down
-    - leap_of_faith,range_check=none,ignore_usable=true,ignore_cooldown=true,cycle=members,if=cycle.range>0&cycle.buff.power_word_shield.up&!prev_gcd.1.leap_of_feath
-    - power_infusion,if=prev_gcd.1.leap_of_faith&lastcast.leap_of_faith<2
-    - return
-
-
-
-
-
-    - call_action_list,name=out_of_combat
+    - return,if=mounted|!state.rotation
+    - call_action_list,name=out_of_combat,if=!player.combat
+    - call_action_list,name=mouseover_enemy,if=config.MO_enabled&mouseover.exists&mouseover.alive&!player.casting&!player.channeling&mouseover.enemy
+    - return,if=player.channeling
     - angelic_feather.player,if=var.use_af
     - call_action_list,name=mouseover_friendly,if=config.MO_enabled&mouseover.exists&mouseover.alive&!player.casting&!player.channeling&mouseover.friendly
     - call_action_list,name=mouseover_enemy,if=config.MO_enabled&mouseover.exists&mouseover.alive&!player.casting&!player.channeling&mouseover.enemy
     - call_action_list,name=core
     - call_action_list,name=racials
+    - call_action_list,name=dispels
     - call_action_list,name=auto_pi,if=config.cd_aware_pi=3|(config.cd_aware_pi=2&boss_fight)
     - call_action_list,name=mythic_plus,if=player.in_mythic_plus&var.use_amp
     - call_action_list,name=pain_suppression_logic

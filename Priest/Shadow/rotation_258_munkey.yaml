@@ -1,0 +1,61 @@
+version: 1.0
+author: munkey
+spec: 258
+blocked: true
+name: Shadow
+description: "M+ Focused Shadow Priest by munkey"
+
+morphs:
+    void_torrent: void_volley
+    mind_blast: void_blast
+    voidform: void_volley
+
+config:
+
+variables:
+    channeling_mind_flay: target.debuff.remains(15407)>0
+    need_swp_refresh: target.debuff.remains(shadow_word_pain)<=gcd*2
+    need_vamp_touch_refresh: target.debuff.remains(vampiric_touch)<=gcd*2
+    should_void_blast: target.debuff.remains(shadow_word_madness)>0|buff.entropic_rift.remains<=2
+    should_swm: target.debuff.remains(shadow_word_madness)<gcd*2|insanity.deficit<20|buff.entropic_rift.up
+    should_cancel_mind_flay: (var.need_swp_refresh&cooldown.shadow_word_pain.ready)|
+        (var.need_vamp_touch_refresh&(cooldown.tentacle_slam.ready|cooldown.vampiric_touch.ready))|
+        (buff.voidform.down&cooldown.voidform.ready)|
+        cooldown.shadow_word_death.ready|
+        (var.should_void_blast&cooldown.voidblast.ready)|
+        (var.should_swm&cooldown.shadow_word_madness.ready)|
+        (cooldown.void_volley.ready&buff.voidform.up)|
+        (cooldown.void_torrent.ready&buff.voidform.down)|
+        cooldown.mind_blast.ready|
+        cooldown.shadow_word_madness.ready|
+        cooldown.tentacle_slam.ready|
+        cooldown.shadow_word_death.ready
+
+lists:
+    main:
+        - return,if=!state.rotation|mounted
+        - call_action_list,name=sanity_checks
+        - call_action_list,name=spell_queue
+        - call_action_list,name=auto_heal
+        - call_action_list,name=auto_target_ranged
+        - return,if=casting|channeling
+        - shadowform,range_check=none,if=buff.shadowform.down
+        - tentacle_slam,if=player.moving
+        - shadow_word_death,if=player.moving
+        - shadow_word_pain,if=player.moving
+        - shadow_word_pain,interrupt=var.channeling_mind_flay,if=var.need_swp_refresh
+        - tentacle_slam,interrupt=var.channeling_mind_flay,if=var.need_vamp_touch_refresh
+        - vampiric_touch,interrupt=var.channeling_mind_flay,if=var.need_vamp_touch_refresh
+        - voidform,interrupt=var.channeling_mind_flay,if=buff.voidform.down
+        - power_infusion
+        - shadow_word_death,interrupt=var.channeling_mind_flay
+        - void_blast,interrupt=var.channeling_mind_flay,if=var.should_void_blast&cooldown.void_blast.ready
+        - shadow_word_madness,interrupt=var.channeling_mind_flay,if=var.should_swm
+        - voidform,interrupt=var.channeling_mind_flay,if=buff.voidform.up
+        - void_torrent,interrupt=var.channeling_mind_flay,if=buff.voidform.down&cooldown.void_torrent.ready
+        - void_blast,interrupt=var.channeling_mind_flay&cooldown.void_blast.ready
+        - mind_blast,interrupt=var.channeling_mind_flay&cooldown.mind_blast.ready
+        - shadow_word_madness,interrupt=var.channeling_mind_flay
+        - tentacle_slam,interrupt=var.channeling_mind_flay
+        - shadow_word_death,interrupt=var.channeling_mind_flay
+        - mind_flay
