@@ -144,11 +144,10 @@ lists:
         - mind_blast,interrupt=true,if=buff.shadowy_insight.up
         # Voidweaver Priority
         - shadow_word_pain,interrupt=true,if=debuff.shadow_word_pain.down&talent.invoked_nightmare.enabled
-        - tentacle_slam,interrupt=true,if=active_enemies>1&cooldown.tentacle_slam.charges=2
+        - tentacle_slam,interrupt=true,if=cooldown.tentacle_slam.charges=2&var.missing_vamp_touch>2
         
         # Spread Logic
-        - tentacle_slam,interrupt=true,if=active_enemies>1&var.missing_vamp_touch>=5
-        - vampiric_touch,interrupt=true,if=debuff.vampiric_touch.refreshable&var.missing_vamp_touch<5
+        - vampiric_touch,interrupt=true,if=debuff.vampiric_touch.refreshable&var.missing_vamp_touch<=2
         - target_enemy,if=var.missing_vamp_touch>0&!debuff.vampiric_touch.refreshable
 
         - voidform,interrupt=true
