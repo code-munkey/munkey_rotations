@@ -1,0 +1,411 @@
+version: "1.0.0"
+spec: 254                           # Marksmanship Hunter
+name: "Marksmanship Hunter"
+description: "WoWHead/IcyVeins/Method.gg profiles with Sentinel/Dark Ranger hero talent detection"
+author: "Kimi"
+
+config:
+  rotation_profile:
+    label: 'Profile Source'
+    type: dropdown
+    options:
+      - label: "Icy Veins (Recommended)"
+        value: 1
+      - label: "Method.gg"
+        value: 2
+      - label: "WoWHead"
+        value: 3
+    default: 0
+
+  aoe_threshold:
+    min: 2
+    max: 8
+    default: 3
+
+  # Defensive abilities toggle
+  use_defensives:
+    type: checkbox
+    default: true
+
+  # Hero talent override
+  hero_talent_mode:
+    type: dropdown
+    options:
+      - label: "Auto (Detect)"
+        value: 1
+      - label: "Sentinel"
+        value: 2
+      - label: "Dark Ranger"
+        value: 3
+    default: 0
+
+  # Aspect of the Hydra handling (2-target cleave)
+  use_hydra_cleave:
+    type: checkbox
+    default: true
+    description: "Use Multi-Shot at 2 targets with Aspect of the Hydra"
+
+variables:
+  # Hero talent detection
+  is_sentinel: talent.sentinel.enabled
+  is_dark_ranger: talent.black_arrow.enabled
+
+  # Hero talent selection (config override or auto-detect)
+  use_sentinel: (config.hero_talent_mode=1&var.is_sentinel)|(config.hero_talent_mode=2)
+  use_dark_ranger: (config.hero_talent_mode=1&var.is_dark_ranger)|(config.hero_talent_mode=3)
+
+  # Profile selection variables
+  use_icyveins: config.rotation_profile=icyveins
+  use_method: config.rotation_profile=method
+  use_wowhead: config.rotation_profile=wowhead
+
+  # AOE detection (3+ targets normal, 2+ with Aspect of the Hydra)
+  use_aoe: (active_enemies>=config.aoe_threshold)|(talent.aspect_of_the_hydra.enabled&active_enemies>=2&config.use_hydra_cleave)
+
+  # Trick Shots handling - need Multi-Shot before Aimed/Rapid on AoE
+  trick_shots_needed: var.use_aoe&buff.trick_shots.down&talent.trick_shots.enabled
+
+  # Precise Shots handling - must spend before generating more
+  precise_shots_to_spend: buff.precise_shots.stack>0
+
+  # Cooldown windows
+  in_trueshot: buff.trueshot.up
+  in_burst: buff.trueshot.up|buff.bloodlust.up
+
+  # Execute phase
+  in_execute: target.health.pct<20
+
+  # Focus management
+  focus_high: focus>=80
+  focus_low: focus<30
+
+  # Bulletstorm check (want this up for Aimed Shot)
+  has_bulletstorm: buff.bulletstorm.up
+
+  # Double Tap check (prevents Trueshot/Volley back-to-back)
+  has_double_tap: buff.double_tap.up
+
+  # Lock and Load proc
+  has_lock_and_load: buff.lock_and_load.up
+
+  # Deathblow proc (Dark Ranger)
+  has_deathblow: buff.deathblow.up
+
+
+lists:
+  # ========================================================================
+  # MAIN ENTRY POINT (Auto-executed - NO explicit call needed!)
+  # ========================================================================
+  main:
+    # Sanity checks
+    - return,if=player.dead|!state.rotation|state.blocked_inputs
+    - return,if=!player.combat&!target.combat
+
+    # Apply Hunter's Mark if not present
+    - hunters_mark,if=target.debuff.hunters_mark.down&target.exists
+
+    # Defensive handling
+    - call_action_list,name=defensives,if=config.use_defensives
+
+    # Cooldown management
+    - call_action_list,name=cooldowns
+
+    # Interrupts
+    - call_action_list,name=interrupts
+
+    # Hero-specific rotations
+    - call_action_list,name=dark_ranger_st,if=var.use_dark_ranger&!var.use_aoe
+    - call_action_list,name=dark_ranger_aoe,if=var.use_dark_ranger&var.use_aoe
+    - call_action_list,name=sentinel_st,if=var.use_sentinel&!var.use_aoe
+    - call_action_list,name=sentinel_aoe,if=var.use_sentinel&var.use_aoe
+
+    # Fallback to Sentinel if no hero talent detected
+    - call_action_list,name=sentinel_st,if=!var.use_dark_ranger&!var.use_sentinel&!var.use_aoe
+    - call_action_list,name=sentinel_aoe,if=!var.use_dark_ranger&!var.use_sentinel&var.use_aoe
+
+  # ========================================================================
+  # DEFENSIVES (Shared across all profiles)
+  # ========================================================================
+  defensives:
+    # Major defensive at low health
+    - survival_of_the_fittest,if=health.pct<30
+    # Self-heal when needed
+    - exhilaration,if=health.pct<50&!buff.survival_of_the_fittest.up
+    # Turtle for emergencies
+    - aspect_of_the_turtle,if=health.pct<15&!buff.survival_of_the_fittest.up
+
+  # ========================================================================
+  # INTERRUPTS (Shared across all profiles)
+  # ========================================================================
+  interrupts:
+    - counter_shot,if=target.casting.interruptible
+    - counter_shot.focus,if=focus.casting.interruptible
+    - counter_shot.mouseover,if=mouseover.casting.interruptible
+    - intimidation,if=target.casting.interruptible&cooldown.counter_shot.down
+    - tranquilizing_shot,if=target.purgeable.list
+
+  # ========================================================================
+  # COOLDOWNS (Shared across all profiles)
+  # ========================================================================
+  cooldowns:
+    # Trueshot usage: never back-to-back with Volley (wastes Double Tap)
+    # Use after Rapid Fire for fresh Bulletstorm, before Aimed Shot
+    - trueshot
+      ,if=cooldown.aimed_shot.charges>=1&
+          (cooldown.volley.remains>5|cooldown.volley.remains=0)&
+          !var.has_double_tap&
+          (buff.bulletstorm.up|cooldown.rapid_fire.remains>5)
+    
+    # Volley: never use right before/after Trueshot
+    - volley,if=!var.has_double_tap&!buff.trueshot.up&(cooldown.trueshot.remains>5|cooldown.trueshot.remains=0)
+    
+    # Trinkets with Trueshot
+    - trinket_1,if=trinket_1.usable&trinket_1.ready&buff.trueshot.up
+    - trinket_2,if=trinket_2.usable&trinket_2.ready&buff.trueshot.up
+
+  # ========================================================================
+  # DARK RANGER - SINGLE TARGET
+  # Based on: Icy Veins / Method.gg
+  # Focus: Black Arrow priority, Deathblow management
+  # ========================================================================
+  dark_ranger_st:
+    # Trueshot window: Trueshot → Black Arrow → Wailing Arrow → Black Arrow
+    # Wailing Arrow (replaces Trueshot during Trueshot)
+    - wailing_arrow,override=trueshot,if=buff.trueshot.up
+    
+    # Consume Deathblow procs immediately (Black Arrow does ~3x damage during Withering Fire)
+    - black_arrow,override=kill_shot,if=cooldown.black_arrow.charges>0&(buff.withering_fire.up|buff.deathblow.up)
+    
+    # Trueshot activation (applies Withering Fire + free Deathblow)
+    # Already handled in cooldowns list
+    
+    # Spend Precise Shots after Aimed/Rapid (Arcane Shot)
+    - arcane_shot,if=var.precise_shots_to_spend
+    
+    # Rapid Fire if no Bulletstorm (maintain buff)
+    - rapid_fire,if=!var.has_bulletstorm
+    
+    # Black Arrow on Deathblow proc (outside Withering Fire)
+    - black_arrow,override=kill_shot,if=cooldown.black_arrow.charges>0&buff.deathblow.up
+    
+    # Aimed Shot: 2 charges OR Lock and Load (spend PS first already checked)
+    - aimed_shot,if=cooldown.aimed_shot.charges=2|var.has_lock_and_load
+    
+    # Rapid Fire on cooldown
+    - rapid_fire
+    
+    # Aimed Shot with 1 charge (spend PS first)
+    - aimed_shot,if=cooldown.aimed_shot.charges>=1
+    
+    # Black Arrow when available (no proc needed)
+    - black_arrow,override=kill_shot,if=cooldown.black_arrow.charges>0
+    
+    # Kill Shot in execute
+    - kill_shot,if=var.in_execute
+    
+    # Steady Shot filler
+    - steady_shot
+
+  # ========================================================================
+  # DARK RANGER - AOE
+  # ========================================================================
+  dark_ranger_aoe:
+    # Wailing Arrow during Trueshot
+    - wailing_arrow,override=trueshot,if=buff.trueshot.up
+    
+    # Black Arrow with Deathblow during Withering Fire
+    - black_arrow,override=kill_shot,if=cooldown.black_arrow.charges>0&buff.withering_fire.up&buff.deathblow.up
+    
+    # Multi-Shot to spend Precise Shots AND apply Trick Shots
+    - multi_shot,if=var.precise_shots_to_spend
+    
+    # Apply Trick Shots before Aimed/Rapid
+    - multi_shot,if=var.trick_shots_needed
+    
+    # Black Arrow with Deathblow
+    - black_arrow,override=kill_shot,if=cooldown.black_arrow.charges>0&buff.deathblow.up
+    
+    # Rapid Fire if no Bulletstorm (with Trick Shots)
+    - rapid_fire,if=!var.has_bulletstorm&buff.trick_shots.up
+    
+    # Aimed Shot with Trick Shots (2 charges or Lock and Load)
+    - aimed_shot,if=buff.trick_shots.up&(cooldown.aimed_shot.charges=2|var.has_lock_and_load)
+    
+    # Rapid Fire with Trick Shots
+    - rapid_fire,if=buff.trick_shots.up
+    
+    # Aimed Shot with Trick Shots (1 charge)
+    - aimed_shot,if=buff.trick_shots.up&cooldown.aimed_shot.charges>=1
+    
+    # Black Arrow when available
+    - black_arrow,override=kill_shot,if=cooldown.black_arrow.charges>0
+    
+    # Kill Shot in execute
+    - kill_shot,if=var.in_execute
+    
+    # Steady Shot filler
+    - steady_shot
+
+  # ========================================================================
+  # SENTINEL - SINGLE TARGET (Icy Veins Profile)
+  # Based on: https://www.icy-veins.com/wow/marksmanship-hunter-pve-dps-rotation-cooldowns-abilities
+  # Focus: Precise Shots engine for Sentinel's Mark
+  # ========================================================================
+  sentinel_st:
+    # Moonlight Chakram during Trueshot (replaces Trueshot button)
+    # Use after first Aimed Shot in Trueshot window
+    - moonlight_chakram,override=trueshot,if=buff.trueshot.up&prev_gcd.1.aimed_shot
+    
+    # Moonlight Chakram as filler during Trueshot
+    - moonlight_chakram,override=trueshot,if=buff.trueshot.up
+    
+    # Arcane Shot to spend Precise Shots (ALWAYS after Aimed/Rapid)
+    - arcane_shot,if=var.precise_shots_to_spend
+    
+    # Rapid Fire if no Bulletstorm buff
+    - rapid_fire,if=!var.has_bulletstorm
+    
+    # Aimed Shot: 2 charges OR Lock and Load proc
+    # Must spend Precise Shots first (already checked above)
+    - aimed_shot,if=cooldown.aimed_shot.charges=2|var.has_lock_and_load
+    
+    # Rapid Fire on cooldown
+    - rapid_fire
+    
+    # Aimed Shot with 1 charge (spend PS first)
+    - aimed_shot,if=cooldown.aimed_shot.charges>=1
+    
+    # Steady Shot filler (generates Focus + Aimed Shot CDR)
+    - steady_shot
+
+  # ========================================================================
+  # SENTINEL - AOE
+  # Based on: Icy Veins Sentinel AoE
+  # ========================================================================
+  sentinel_aoe:
+    # Moonlight Chakram during Trueshot
+    - moonlight_chakram,override=trueshot,if=buff.trueshot.up
+    
+    # Multi-Shot to spend Precise Shots (also applies Trick Shots on 3+ targets)
+    - multi_shot,if=var.precise_shots_to_spend
+    
+    # Apply Trick Shots before every Aimed/Rapid
+    - multi_shot,if=var.trick_shots_needed
+    
+    # Rapid Fire with Trick Shots if no Bulletstorm
+    - rapid_fire,if=buff.trick_shots.up&!var.has_bulletstorm
+    
+    # Aimed Shot with Trick Shots (2 charges or Lock and Load)
+    - aimed_shot,if=buff.trick_shots.up&(cooldown.aimed_shot.charges=2|var.has_lock_and_load)
+    
+    # Rapid Fire with Trick Shots
+    - rapid_fire,if=buff.trick_shots.up
+    
+    # Aimed Shot with Trick Shots (1 charge)
+    - aimed_shot,if=buff.trick_shots.up&cooldown.aimed_shot.charges>=1
+    
+    # Steady Shot filler
+    - steady_shot
+
+  # ========================================================================
+  # METHOD.GG - SINGLE TARGET ALTERNATIVE
+  # Based on: https://www.method.gg/guides/marksmanship-hunter/playstyle-and-rotation
+  # Focus: Slightly different priority on cooldown alignment
+  # ========================================================================
+  method_st:
+    # Method emphasizes keeping cooldowns rolling above all else
+    # Moonlight Chakram / Wailing Arrow
+    - moonlight_chakram,override=trueshot,if=buff.moonlight_chakram.up&var.use_sentinel
+    - wailing_arrow,override=trueshot,if=buff.wailing_arrow.up&var.use_dark_ranger
+    
+    # Spend Precise Shots
+    - arcane_shot,if=var.precise_shots_to_spend&!var.use_aoe
+    - multi_shot,if=var.precise_shots_to_spend&var.use_aoe
+    
+    # Never let Aimed Shot sit at 2 charges
+    - aimed_shot,if=cooldown.aimed_shot.charges=2
+    
+    # Maintain Bulletstorm
+    - rapid_fire,if=!var.has_bulletstorm
+    
+    # Cooldown abilities on cooldown
+    - rapid_fire
+    - aimed_shot,if=cooldown.aimed_shot.charges>=1
+    
+    # Dark Ranger specific
+    - black_arrow,override=kill_shot,if=cooldown.black_arrow.charges>0&var.use_dark_ranger
+    - kill_shot,if=var.in_execute
+    
+    # Filler
+    - steady_shot
+
+  # ========================================================================
+  # METHOD.GG - AOE
+  # ========================================================================
+  method_aoe:
+    # Trick Shots maintenance is key
+    - multi_shot,if=var.trick_shots_needed
+    
+    # Hero abilities
+    - moonlight_chakram,override=trueshot,if=buff.moonlight_chakram.up&var.use_sentinel
+    - wailing_arrow,override=trueshot,if=buff.wailing_arrow.up&var.use_dark_ranger
+    
+    # Spend Precise Shots
+    - multi_shot,if=var.precise_shots_to_spend
+    
+    # Aimed Shot never at 2 charges with Trick Shots
+    - aimed_shot,if=cooldown.aimed_shot.charges=2&buff.trick_shots.up
+    
+    # Bulletstorm maintenance
+    - rapid_fire,if=!var.has_bulletstorm&buff.trick_shots.up
+    
+    # Cooldowns with Trick Shots
+    - rapid_fire,if=buff.trick_shots.up
+    - aimed_shot,if=buff.trick_shots.up&cooldown.aimed_shot.charges>=1
+    
+    # Dark Ranger
+    - black_arrow,override=kill_shot,if=cooldown.black_arrow.charges>0&var.use_dark_ranger
+    
+    # Filler
+    - steady_shot
+
+  # ========================================================================
+  # WOWHEAD - SINGLE TARGET (Basic)
+  # Based on: https://www.wowhead.com/guide/classes/hunter/marksmanship/rotation-cooldowns-pve-dps
+  # Simplified profile for reference
+  # ========================================================================
+  wowhead_st:
+    # Precise Shots spend
+    - arcane_shot,if=var.precise_shots_to_spend
+    
+    # Core rotation
+    - aimed_shot,if=cooldown.aimed_shot.charges=2|var.has_lock_and_load
+    - rapid_fire
+    - aimed_shot,if=cooldown.aimed_shot.charges>=1
+    
+    # Hero specific
+    - moonlight_chakram,override=trueshot,if=buff.trueshot.up&var.use_sentinel
+    - wailing_arrow,override=trueshot,if=buff.trueshot.up&var.use_dark_ranger
+    - black_arrow,override=kill_shot,if=cooldown.black_arrow.charges>0&var.use_dark_ranger
+    
+    # Filler
+    - steady_shot
+
+  # ========================================================================
+  # WOWHEAD - AOE
+  # ========================================================================
+  wowhead_aoe:
+    # Trick Shots
+    - multi_shot,if=var.trick_shots_needed|var.precise_shots_to_spend
+    
+    # Core rotation with Trick Shots
+    - aimed_shot,if=buff.trick_shots.up&(cooldown.aimed_shot.charges=2|var.has_lock_and_load)
+    - rapid_fire,if=buff.trick_shots.up
+    - aimed_shot,if=buff.trick_shots.up
+    
+    # Hero abilities
+    - moonlight_chakram,override=trueshot,if=buff.moonlight_chakram.up&var.use_sentinel
+    - wailing_arrow,override=trueshot,if=buff.wailing_arrow.up&var.use_dark_ranger
+    
+    # Filler
+    - steady_shot
