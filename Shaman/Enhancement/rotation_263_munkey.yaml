@@ -68,8 +68,8 @@ config:
 variables:
   # Hero Talent Detection
   # Using key text from talents to identify trees
-  is_stormbringer: talent.tempest|talent.arc_discharge
-  is_totemic: talent.surging_totem|talent.lively_totems
+  is_stormbringer: talent.tempest.enabled
+  is_totemic: talent.surging_totem.enabled
   
   # Combat Checks
   in_combat: player.combat
