@@ -137,27 +137,23 @@ lists:
         - void_torrent,interrupt=true
         - mind_blast,interrupt=true
         - shadow_word_madness,interrupt=true
-        - tentacle_slam,interrupt=true
 
     method_voidweaver:
         - call_action_list,name=method_voidweaver_voidform,if=buff.voidform.up
         - mind_blast,interrupt=true,if=buff.shadowy_insight.up
+
         # Voidweaver Priority
         - shadow_word_pain,interrupt=true,if=debuff.shadow_word_pain.down&talent.invoked_nightmare.enabled
-        - tentacle_slam,interrupt=true,if=cooldown.tentacle_slam.charges=2&var.missing_vamp_touch>2
-        
-        # Spread Logic
-        - vampiric_touch,interrupt=true,if=debuff.vampiric_touch.refreshable&var.missing_vamp_touch<=2
-        - target_enemy,if=var.missing_vamp_touch>0&!debuff.vampiric_touch.refreshable
+        - tentacle_slam,interrupt=true,if=cooldown.tentacle_slam.charges_fractional>1.6&var.missing_vamp_touch>2
 
-        - voidform,interrupt=true
+        #- target_enemy,if=var.missing_vamp_touch>0&!debuff.vampiric_touch.refreshable
+        - voidform,interrupt=true,if=state.cds
         - void_blast,interrupt=true,if=buff.shadow_word_madness.up|buff.entropic_rift.remains<2
         - shadow_word_madness,interrupt=true,if=insanity.deficit<30|buff.shadow_word_madness.down|buff.shadow_word_madness.remains<2|buff.entropic_rift.up
         - void_volley,interrupt=true
         - void_torrent,interrupt=true
         - mind_blast,interrupt=true
         - shadow_word_madness,interrupt=true
-        - tentacle_slam,interrupt=true
         - shadow_word_death,interrupt=true,if=target.health.pct<20
         - mind_flay
         - shadow_word_pain,if=player.moving

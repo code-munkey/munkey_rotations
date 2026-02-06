@@ -1,0 +1,42 @@
+version: 1
+author: munkey
+spec: 1467
+name: Devestating Dev
+description: "Feeling devestated?"
+
+morphs:
+    azure_strike: azure_sweep
+
+config:
+
+variables:
+    is_st: enemies.combat.15y<3
+    is_aoe: enemies.combat.15y>2
+
+lists:
+    st:
+        - living_flame
+        - dragonrage
+        - tip_the_scales
+        - fire_breath
+        - eternity_surge
+        - deep_breath
+        - disintegrate
+    aoe:
+        - azure_strike,if=buff.charged_blast.stack<10|buff.charged_blast.refreshable
+        - azure_sweep,if=buff.charged_blast.stack<10|buff.charged_blast.refreshable
+        - eternity_surge
+        - eternity_surge,ignore_usable=true,ignore_cooldown=true,casting_check=eternity_surge,if=player.empower_stage>=1
+        - shattering_star
+        - disintegrate
+        - deep_breath
+        - tip_the_scales
+        - dragonrage
+        - fire_breath
+        - fire_breath,ignore_usable=true,ignore_cooldown=true,casting_check=fire_breath,if=player.empower_stage>=1
+        - disintegrate
+        - pyre
+    main:
+        - return,if=!state.rotation|mounted|state.blocked_inputs
+        - call_action_list,name=st,if=var.is_st
+        - call_action_list,name=aoe,if=var.is_aoe

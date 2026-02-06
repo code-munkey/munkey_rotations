@@ -1,0 +1,38 @@
+version: 1
+spec: 1480
+name: Le Vour
+description: "Devour this"
+entry: main
+
+morphs:
+  voidblade: reapers_toll
+
+config:
+
+variables:
+  void_meta_stacks: buff.1225789.stack
+  nearby_fragments: buff.soul_fragments.stack
+  in_meta: buff.1217607.up
+lists:
+  in_meta:
+    - void_ray,if=fury=fury.max
+    - cull,override=reap,if=var.nearby_fragments>=4
+    - reapers_toll
+    - vengeful_retreat,if=buff.voidstep.up,delay=100
+    - pierce_the_veil,override=voidblade
+    - predators_wake,override=the_hunt
+    - void_ray
+    - devour,override=consume
+  out_of_meta:
+    - void_ray,if=fury=fury.max
+    - reap,if=var.void_meta_stacks>30&var.nearby_fragments>=4
+    - consume,if=(var.void_meta_stacks+var.nearby_fragments)<35
+  enter_meta:
+    - voidblade
+    - the_hunt,global_delay=100
+    - void_metamorphosis
+  main:
+    - return,if=!state.rotation|mounted|state.state.blocked_inputs
+    - call_action_list,name=out_of_meta,if=!var.in_meta
+    - call_action_list,name=enter_meta,if=!var.in_meta&var.void_meta_stacks=35&!player.moving
+    - call_action_list,name=in_meta,if=var.in_meta

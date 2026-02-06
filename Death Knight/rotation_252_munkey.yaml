@@ -4,68 +4,57 @@ spec: 252
 name: Unholy Midnight
 description: "Optimized Unholy Death Knight rotation by munkey. Includes Reanimation/Magus sync logic and Festering Scythe maintenance."
 
-morphs:
-  festering_strike: festering_scythe
+config:
+  force_raid:
+    label: "Force raid rotation"
+    type: checkbox
+    default: true
+
+variables:
+  casting_idol: (trinket_2.id=246344&trinket_2.cd>0&trinket_2.cd<1)|(trinket_1.id=246344&trinket_1.cd>0&trinket_1.cd<1)
+  is_aoe: state.aoe&enemies.combat.8y>2
+  is_st: state.aoe=false|enemies.combat.8y<=2
 
 lists:
+  use_trinkets:
+    - trinket_1,if=state.cds&trinket_1.usable&trinket_1.ready,global_delay=100
+    - trinket_2,if=state.cds&trinket_2.usable&trinket_2.ready,global_delay=100
+  rotation:
+    - outbreak,if=target.debuff.remains(virulent_plague)=0
+    - call_action_list,name=use_trinkets,if=state.cds,global_delay=100
+    - return,if=var.casting_idol
+    - army_of_the_dead,if=state.cds
+    - dark_transformation,if=state.cds
+    - soul_reaper
+    - putrefy,if=(cooldown.putrefy.charges=2|buff.commander_of_the_dead.up|cooldown.putrefy.full_recharge_time<cooldown.dark_transformation.remains)
+    - scourge_strike,if=buff.1254252.stacks>0
+    - death_coil,if=(buff.sudden_doom.react|runic_power>=80)&var.is_st
+    - epidemic,if=(buff.sudden_doom.react|runic_power>=80)&var.is_aoe
+    - festering_scythe,override=festering_strike,if=debuff.1241077.remains<5|cooldown.festering_scythe.ready
+    - festering_strike
+    - death_coil,if=var.is_st
+    - epidemic,if=var.is_aoe
+
   main:
+    - return,if=!state.rotation
+    - augment_rune,if=buff.ethereal_augmentation.remains<300
     - call_action_list,name=sanity_checks
     - call_action_list,name=spell_queue
     - call_action_list,name=auto_target
     - return,if=!player.combat
     - return,if=player.channeling
-
+    
     # Defensives and Utility
     - call_action_list,name=defensives
 
     # Interrupts
     - mind_freeze,if=interrupts.target.ready
-    
+    - mind_freeze.mouseover,if=interrupts.mouseover.ready
+    - death_grip,if=interrupts.target.ready
+    - death_grip.mouseover,if=interrupts.mouseover.ready
+
     # Rotation Dispatch
-    - call_action_list,name=aoe,if=active_enemies>=2
-    - call_action_list,name=st
-
-  st:
-    - outbreak,if=dot.virulent_plague.remains<1.5|!dot.virulent_plague.ticking
-
-    - army_of_the_dead
-    
-    - dark_transformation
-    - potion,if=buff.dark_transformation.up|cooldown.dark_transformation.remains<2
-    - trinket_1,if=buff.dark_transformation.up|cooldown.dark_transformation.remains<2
-    - trinket_2,if=buff.dark_transformation.up|cooldown.dark_transformation.remains<2
-
-    - putrefy,if=action.putrefy.charges=2|!talent.reaping|(talent.reaping&buff.dark_transformation.up)|time<20
-
-    - soul_reaper
-    
-    - festering_scythe,if=debuff.festering_scythe.down|debuff.festering_scythe.remains<3
-
-    - death_coil,if=buff.sudden_doom.react|runic_power>=80
-    
-    - festering_strike,if=debuff.festering_wound.stack=0
-
-    - scourge_strike,if=debuff.festering_wound.stack>0
-    
-    - death_coil
-
-  aoe:
-    - outbreak,if=dot.virulent_plague.remains<1.5|!dot.virulent_plague.ticking
-    - army_of_the_dead
-    
-    - dark_transformation
-    - potion,if=buff.dark_transformation.up
-    - trinket_1,if=buff.dark_transformation.up
-    - trinket_2,if=buff.dark_transformation.up
-    - putrefy
-    - soul_reaper
-    - festering_scythe,if=debuff.festering_scythe.down|debuff.festering_scythe.remains<3
-    - death_coil,if=(buff.sudden_doom.react|runic_power>=80)&active_enemies<=3
-    - epidemic,if=(buff.sudden_doom.react|runic_power>=80)&active_enemies>=4
-    - festering_strike,if=debuff.festering_wound.stack=0
-    - scourge_strike,if=debuff.festering_wound.stack>0
-    - death_coil,if=active_enemies<=3
-    - epidemic,if=active_enemies>=4
+    - call_action_list,name=rotation
 
   defensives:
     - icebound_fortitude,if=player.health.pct<35|player.stunned
