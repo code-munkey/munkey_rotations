@@ -7,8 +7,6 @@ name: "Fury Warrior - Multi-Profile"
 description: "WoWHead vs Method.gg vs Icy Veins profiles with Slayer/Mountain Thane hero talent detection"
 author: "Munkey"
 blocked: true
-date: "2026-02-06"
-patch: "12.0"
 
 # ----------------------------------------------------------------------------
 # CONFIGURATION - User Settings UI
@@ -24,19 +22,19 @@ config:
         value: 2
       - label: "Icy Veins"
         value: 3
-    default: 0
+    default: 1
 
   # AOE threshold slider
   aoe_threshold:
     type: slider
     min: 2
     max: 8
-    value: 3
+    default: 3
 
   # Defensives toggle
   use_defensives:
     type: checkbox
-    value: true
+    default: true
 
   # Hero talent preference (Auto-detects if not selected)
   hero_talent_mode:
@@ -53,15 +51,15 @@ config:
   # Cooldown alignment - sync Avatar with Recklessness
   sync_cooldowns:
     type: checkbox
-    value: true
+    default: true
 
 # ----------------------------------------------------------------------------
 # VARIABLES - Reusable Expressions
 # ----------------------------------------------------------------------------
 variables:
   # Hero talent detection
-  is_slayer: talent.slayer|(config.hero_talent_mode=1)
-  is_mountain_thane: talent.mountain_thane|(config.hero_talent_mode=2)
+  is_slayer: talent.slayers_dominance.enabled|(config.hero_talent_mode=1)
+  is_mountain_thane: talent.lightning_strikes.enabled|(config.hero_talent_mode=2)
 
   # Execute phase detection (20% default, 35% with Massacre)
   execute_phase: (target.health.pct<20)|(target.health.pct<35&talent.massacre)
@@ -72,11 +70,11 @@ variables:
 
   # Enrage management
   enrage_refresh_needed: buff.enrage.remains<3
-  enrage_down: "!buff.enrage.up"
+  enrage_down: buff.enrage.down
 
   # Improved Whirlwind check for cleave
-  needs_cleave_buff: "active_enemies>=config.aoe_threshold&!buff.improved_whirlwind.up"
-  cleave_buff_refresh: "buff.improved_whirlwind.remains<3&active_enemies>=config.aoe_threshold"
+  needs_cleave_buff: active_enemies>=config.aoe_threshold&!buff.improved_whirlwind.up
+  cleave_buff_refresh: buff.improved_whirlwind.remains<3&active_enemies>=config.aoe_threshold
 
   # Sudden Death proc management
   sudden_death_high_prio: buff.sudden_death.stack>=2|buff.sudden_death.remains<3
