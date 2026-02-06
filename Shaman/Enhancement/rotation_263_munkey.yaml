@@ -160,8 +160,8 @@ lists:
     
     # 6. Doom Winds
     - doom_winds,if=target.distance<8
-    - trinket_1,if=trinket_1.sync
-    - trinket_2,if=trinket_2.sync
+    - trinket_1,if=trinket_1.sync&state.cds
+    - trinket_2,if=trinket_2.sync&state.cds
     
     # 7. Primordial Storm (10 stacks)
     - primordial_storm,override=sundering,if=buff.primordial_storm.up&buff.maelstrom_weapon.stack>=10
@@ -215,6 +215,8 @@ lists:
     # 5. Cooldowns
     - ascendance
     - doom_winds,if=state.cds
+    - trinket_1,if=trinket_1.sync&state.cds
+    - trinket_2,if=trinket_2.sync&state.cds
     
     # 6. Primordial Storm (10 MSW)
     - primordial_storm,override=sundering,if=buff.primordial_storm.up&buff.maelstrom_weapon.stack>=10
