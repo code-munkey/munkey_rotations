@@ -1,0 +1,449 @@
+# ----------------------------------------------------------------------------
+# METADATA
+# ----------------------------------------------------------------------------
+version: "1.0.0"
+spec: 72
+name: "Fury Warrior - Multi-Profile"
+description: "WoWHead vs Method.gg vs Icy Veins profiles with Slayer/Mountain Thane hero talent detection"
+author: "munkey"
+date: "2026-02-06"
+patch: "12.0"
+
+# ----------------------------------------------------------------------------
+# CONFIGURATION - User Settings UI
+# ----------------------------------------------------------------------------
+config:
+  # Profile selection dropdown
+  rotation_profile:
+    type: dropdown
+    options:
+      - label: "WoWHead"
+        value: 1
+      - label: "Method.gg"
+        value: 2
+      - label: "Icy Veins"
+        value: 3
+    default: 0
+
+  # AOE threshold slider
+  aoe_threshold:
+    type: slider
+    min: 2
+    max: 8
+    value: 3
+
+  # Defensives toggle
+  use_defensives:
+    type: checkbox
+    value: true
+
+  # Hero talent preference (Auto-detects if not selected)
+  hero_talent_mode:
+    type: dropdown
+    options:
+      - label: "Auto-Detect"
+        value: 0
+      - label: "Slayer"
+        value: 1
+      - label: "Mountain Thane"
+        value: 2
+    default: 0
+
+  # Cooldown alignment - sync Avatar with Recklessness
+  sync_cooldowns:
+    type: checkbox
+    value: true
+
+# ----------------------------------------------------------------------------
+# VARIABLES - Reusable Expressions
+# ----------------------------------------------------------------------------
+variables:
+  # Hero talent detection
+  is_slayer: talent.slayer|(config.hero_talent_mode=1)
+  is_mountain_thane: talent.mountain_thane|(config.hero_talent_mode=2)
+
+  # Execute phase detection (20% default, 35% with Massacre)
+  execute_phase: (target.health.pct<20)|(target.health.pct<35&talent.massacre)
+
+  # Rage pooling - pool before major cooldowns
+  pooling_for_recklessness: cooldown.recklessness.remains<5&rage.deficit>30
+  pooling_for_avatar: cooldown.avatar.remains<5&rage.deficit>30&talent.avatar
+
+  # Enrage management
+  enrage_refresh_needed: buff.enrage.remains<3
+  enrage_down: "!buff.enrage.up"
+
+  # Improved Whirlwind check for cleave
+  needs_cleave_buff: "active_enemies>=config.aoe_threshold&!buff.improved_whirlwind.up"
+  cleave_buff_refresh: "buff.improved_whirlwind.remains<3&active_enemies>=config.aoe_threshold"
+
+  # Sudden Death proc management
+  sudden_death_high_prio: buff.sudden_death.stack>=2|buff.sudden_death.remains<3
+
+  # High rage threshold for Rampage
+  high_rage: rage>=110
+  rampage_rage: rage>=80
+
+# ----------------------------------------------------------------------------
+# LISTS - Action Lists
+# ----------------------------------------------------------------------------
+lists:
+  # ========================================================================
+  # MAIN ENTRY POINT - Auto-executed
+  # ========================================================================
+  main:
+    # Sanity checks
+    - return,if=player.dead
+    - return,if=!state.rotation
+
+    # Target acquisition
+    - attack_target,if=!target.exists&target.alive&target.enemy
+
+    # Defensives
+    - call_action_list,name=defensives,if=config.use_defensives
+
+    # Cooldowns
+    - call_action_list,name=cooldowns
+
+    # Route to appropriate profile and target count
+    - call_action_list,name=wowhead_st,if=config.rotation_profile=1&active_enemies<config.aoe_threshold
+    - call_action_list,name=wowhead_aoe,if=config.rotation_profile=1&active_enemies>=config.aoe_threshold
+    - call_action_list,name=method_st,if=config.rotation_profile=2&active_enemies<config.aoe_threshold
+    - call_action_list,name=method_aoe,if=config.rotation_profile=2&active_enemies>=config.aoe_threshold
+    - call_action_list,name=icyveins_st,if=config.rotation_profile=3&active_enemies<config.aoe_threshold
+    - call_action_list,name=icyveins_aoe,if=config.rotation_profile=3&active_enemies>=config.aoe_threshold
+
+    # Default fallback (Icy Veins ST)
+    - call_action_list,name=icyveins_st
+
+  # ========================================================================
+  # DEFENSIVES - Survival Actions
+  # ========================================================================
+  defensives:
+    - enraged_regeneration,if=health.pct<40&buff.enrage.up
+    - spell_reflection,if=target.casting&health.pct<60
+    - impending_victory,if=health.pct<50
+    - defensive_stance,if=health.pct<25
+
+  # ========================================================================
+  # COOLDOWNS - Offensive Cooldown Management
+  # ========================================================================
+  cooldowns:
+    # Recklessness - main cooldown
+    - recklessness,if=(cooldown.avatar.remains<5|!talent.avatar|!config.sync_cooldowns)&(target.time_to_die>10|target.boss)
+
+    # Avatar - sync with Recklessness if configured
+    - avatar,if=(buff.recklessness.up|cooldown.recklessness.remains>20|!config.sync_cooldowns)&(target.time_to_die>10|target.boss)
+
+    # Bladestorm - Slayer hero talent
+    - bladestorm,if=var.is_slayer&buff.enrage.up&(buff.imminent_demise.stack>=3|cooldown.recklessness.remains>15)&(target.time_to_die>5)
+
+    # Odyn's Fury
+    - odyns_fury,if=(active_enemies>=config.aoe_threshold|target.time_to_die<10)&(target.time_to_die>3)
+
+    # Trinkets
+    - trinket_1,if=trinket_1.sync&(buff.recklessness.up|buff.avatar.up|!talent.recklessness)
+    - trinket_2,if=trinket_2.sync&(buff.recklessness.up|buff.avatar.up|!talent.recklessness)
+
+    # Racials
+    - berserking,if=buff.recklessness.up|buff.avatar.up
+    - blood_fury,if=buff.recklessness.up|buff.avatar.up
+    - ancestral_call,if=buff.recklessness.up|buff.avatar.up
+    - fireblood,if=buff.recklessness.up|buff.avatar.up
+    - lights_judgment,if=!talent.recklessness|cooldown.recklessness.remains>20
+
+  # ========================================================================
+  # WOWHEAD - Single Target
+  # ========================================================================
+  wowhead_st:
+    # Opener sequence (first few GCDs)
+    - bloodthirst,if=player.combat.time<2
+    - charge,if=player.combat.time<3&range>8
+
+    # Rampage for Enrage or high rage
+    - rampage,if=var.enrage_down|var.enrage_refresh_needed|var.high_rage
+
+    # Execute priority (Sudden Death procs or Execute phase)
+    - execute,if=var.sudden_death_high_prio
+    - execute,if=var.execute_phase&rage>50
+
+    # Morphed abilities during Recklessness (Reckless Abandon talent)
+    - bloodbath,override=bloodthirst,if=buff.bloodbath.up&(!buff.bloodborne.up|buff.surge_of_adrenaline.up)
+    - crushing_blow,override=raging_blow,if=buff.crushing_blow.up&buff.surge_of_adrenaline.down
+
+    # Odyn's Fury
+    - odyns_fury,if=!buff.bloodborne.up
+
+    # Bloodthirst for Enrage chance and Bloodborne
+    - bloodthirst,if=!buff.bloodborne.up|buff.enrage.remains<4
+
+    # Raging Blow with charges
+    - raging_blow,if=charges>=2&buff.surge_of_adrenaline.down
+
+    # Execute with Sudden Death
+    - execute,if=buff.sudden_death.up
+
+    # Regular filler priority
+    - bloodthirst,if=cooldown.bloodthirst.ready
+    - raging_blow,if=cooldown.raging_blow.ready
+
+    # Rend maintenance
+    - rend,if=!debuff.rend.up&target.time_to_die>10
+
+    # Rampage as filler
+    - rampage,if=var.rampage_rage
+
+    # Wrecking Throw for absorbs
+    - wrecking_throw,if=target.absorb>0
+
+    # Whirlwind filler
+    - whirlwind
+
+  # ========================================================================
+  # WOWHEAD - AOE
+  # ========================================================================
+  wowhead_aoe:
+    # Maintain Improved Whirlwind for cleave
+    - whirlwind,if=var.needs_cleave_buff|var.cleave_buff_refresh
+
+    # Rampage for Enrage
+    - rampage,if=var.enrage_down|var.enrage_refresh_needed
+
+    # Bladestorm with Imminent Demise (Slayer)
+    - bladestorm,if=var.is_slayer&buff.enrage.up&buff.imminent_demise.stack>=3
+
+    # Execute priority
+    - execute,if=var.sudden_death_high_prio
+    - execute,if=var.execute_phase
+
+    # Morphed abilities during Recklessness
+    - bloodbath,override=bloodthirst,if=buff.bloodbath.up
+    - crushing_blow,override=raging_blow,if=buff.crushing_blow.up
+
+    # Odyn's Fury for AOE
+    - odyns_fury,if=buff.bloodborne.up
+
+    # Bloodthirst and Raging Blow with cleave
+    - bloodthirst,if=buff.improved_whirlwind.up
+    - raging_blow,if=buff.improved_whirlwind.up&charges>=1
+
+    # Execute
+    - execute,if=buff.sudden_death.up
+
+    # Maintain cleave buff
+    - whirlwind,if=buff.improved_whirlwind.down
+
+    # Rampage
+    - rampage,if=var.rampage_rage
+
+    # Filler
+    - whirlwind
+
+  # ========================================================================
+  # METHOD.GG - Single Target
+  # ========================================================================
+  method_st:
+    # Opener: Charge → Bloodthirst → Recklessness → Rampage
+    - charge,if=player.combat.time<3&range>8
+    - bloodthirst,if=player.combat.time<4
+
+    # Recklessness/Avatar opener burst
+    - rampage,if=(buff.recklessness.up|buff.avatar.up)&var.enrage_down
+
+    # Slayer: Bladestorm with Enrage and cooldown considerations
+    - bladestorm,if=var.is_slayer&buff.enrage.up&cooldown.recklessness.remains>15
+
+    # Rampage for Enrage maintenance or rage cap
+    - rampage,if=var.enrage_down|var.enrage_refresh_needed|var.high_rage
+
+    # Execute high priority
+    - execute,if=var.sudden_death_high_prio
+    - execute,if=var.execute_phase
+
+    # Mountain Thane: Thunder Blast priority during Avatar
+    - thunder_blast,override=thunder_clap,if=buff.thunder_blast.up&(buff.avatar.up|buff.thunder_blast.stack>=2)
+
+    # Morphed abilities during Recklessness
+    - bloodbath,override=bloodthirst,if=buff.bloodbath.up&!buff.bloodborne.up
+    - crushing_blow,override=raging_blow,if=buff.crushing_blow.up&charges>=2
+
+    # Odyn's Fury
+    - odyns_fury,if=cooldown.odyns_fury.ready
+
+    # Bloodthirst for Bloodborne
+    - bloodthirst,if=!buff.bloodborne.up
+
+    # Raging Blow for Surge of Adrenaline management
+    - raging_blow,if=buff.surge_of_adrenaline.down&charges>=2
+
+    # Execute with Sudden Death
+    - execute,if=buff.sudden_death.up
+
+    # Regular rotation
+    - bloodthirst,if=cooldown.bloodthirst.ready
+    - crushing_blow,override=raging_blow,if=buff.crushing_blow.up
+    - raging_blow,if=cooldown.raging_blow.ready
+
+    # Thunder Blast (Mountain Thane)
+    - thunder_blast,override=thunder_clap,if=buff.thunder_blast.up
+
+    # Rend
+    - rend,if=!debuff.rend.up
+
+    # Rampage
+    - rampage,if=var.rampage_rage
+
+    # Wrecking Throw
+    - wrecking_throw,if=target.absorb>0
+
+    # Thunder Clap (Mountain Thane filler)
+    - thunder_clap,if=var.is_mountain_thane
+
+    # Whirlwind fallback
+    - whirlwind
+
+  # ========================================================================
+  # METHOD.GG - AOE
+  # ========================================================================
+  method_aoe:
+    # Maintain cleave buff
+    - whirlwind,if=var.needs_cleave_buff|var.cleave_buff_refresh
+
+    # Mountain Thane: Thunder Clap applies cleave buff (Crashing Thunder)
+    - thunder_clap,if=var.is_mountain_thane&var.needs_cleave_buff
+
+    # Rampage for Enrage
+    - rampage,if=var.enrage_down|var.enrage_refresh_needed
+
+    # Thunder Blast during Avatar (Mountain Thane)
+    - thunder_blast,override=thunder_clap,if=buff.thunder_blast.up&buff.avatar.up
+
+    # Bladestorm (Slayer)
+    - bladestorm,if=var.is_slayer&buff.enrage.up&buff.imminent_demise.stack>=3
+
+    # Morphed abilities
+    - bloodbath,override=bloodthirst,if=buff.bloodbath.up
+    - crushing_blow,override=raging_blow,if=buff.crushing_blow.up
+
+    # Execute
+    - execute,if=var.sudden_death_high_prio|var.execute_phase
+
+    # Odyn's Fury
+    - odyns_fury,if=cooldown.odyns_fury.ready
+
+    # Bloodthirst with cleave buff
+    - bloodthirst,if=buff.improved_whirlwind.up
+
+    # Raging Blow with cleave
+    - raging_blow,if=buff.improved_whirlwind.up
+
+    # Execute Sudden Death
+    - execute,if=buff.sudden_death.up
+
+    # Refresh cleave
+    - whirlwind,if=buff.improved_whirlwind.down
+
+    # Rampage
+    - rampage,if=var.rampage_rage
+
+    # Thunder Clap (Mountain Thane)
+    - thunder_clap,if=var.is_mountain_thane
+
+    # Whirlwind
+    - whirlwind
+
+  # ========================================================================
+  # ICY VEINS - Single Target
+  # ========================================================================
+  icyveins_st:
+    # Opener: Recklessness → Charge → Rampage
+    - recklessness,if=player.combat.time<2&target.time_to_die>10
+    - charge,if=player.combat.time<3&range>8
+
+    # Rampage to maintain Enrage - primary spender
+    - rampage,if=var.enrage_down|var.enrage_refresh_needed|var.high_rage
+
+    # Execute priority handling
+    - execute,if=var.sudden_death_high_prio
+    - execute,if=var.execute_phase&rage>40
+
+    # Morphed abilities during Recklessness
+    - bloodbath,override=bloodthirst,if=buff.bloodbath.up&!buff.bloodborne.up
+    - crushing_blow,override=raging_blow,if=buff.crushing_blow.up&buff.surge_of_adrenaline.down
+
+    # Odyn's Fury for Enrage jumpstart or damage
+    - odyns_fury,if=!buff.bloodborne.up|(buff.recklessness.up&talent.titanic_rage)
+
+    # Bloodthirst for Enrage chance
+    - bloodthirst,if=!buff.enrage.up|buff.bloodborne.remains<4
+
+    # Raging Blow charges
+    - raging_blow,if=charges>=2
+
+    # Execute Sudden Death
+    - execute,if=buff.sudden_death.up
+
+    # Regular filler
+    - bloodthirst,if=cooldown.bloodthirst.ready
+    - crushing_blow,override=raging_blow,if=buff.crushing_blow.up
+    - raging_blow,if=cooldown.raging_blow.ready
+
+    # Rend maintenance
+    - rend,if=!debuff.rend.up&target.time_to_die>12
+
+    # Rampage when available
+    - rampage,if=var.rampage_rage
+
+    # Wrecking Throw
+    - wrecking_throw,if=target.absorb>0
+
+    # Whirlwind filler (never let GCD sit)
+    - whirlwind
+
+  # ========================================================================
+  # ICY VEINS - AOE
+  # ========================================================================
+  icyveins_aoe:
+    # Maintain Improved Whirlwind for cleave
+    - whirlwind,if=var.needs_cleave_buff|var.cleave_buff_refresh
+
+    # Rampage for Enrage
+    - rampage,if=var.enrage_down|var.enrage_refresh_needed
+
+    # Execute priority
+    - execute,if=var.sudden_death_high_prio
+    - execute,if=var.execute_phase
+
+    # Bladestorm with Enrage (Slayer)
+    - bladestorm,if=var.is_slayer&buff.enrage.up
+
+    # Morphed abilities
+    - bloodbath,override=bloodthirst,if=buff.bloodbath.up
+    - crushing_blow,override=raging_blow,if=buff.crushing_blow.up
+
+    # Odyn's Fury
+    - odyns_fury,if=buff.bloodborne.up
+
+    # Bloodthirst with cleave buff
+    - bloodthirst,if=buff.improved_whirlwind.up
+
+    # Raging Blow with cleave
+    - raging_blow,if=buff.improved_whirlwind.up&charges>=1
+
+    # Execute
+    - execute,if=buff.sudden_death.up
+
+    # Refresh cleave buff
+    - whirlwind,if=buff.improved_whirlwind.down
+
+    # Rampage
+    - rampage,if=var.rampage_rage
+
+    # Filler
+    - whirlwind
+
+# ----------------------------------------------------------------------------
+# ACTIONS - Alternative Entry Point (not used, lists: main: is primary)
+# ----------------------------------------------------------------------------
+# actions:
+#   - call_action_list,name=main

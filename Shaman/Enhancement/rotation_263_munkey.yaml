@@ -1,0 +1,384 @@
+# ============================================================================
+# OPTIMIZED ENHANCEMENT SHAMAN ROTATION
+# ============================================================================
+version: "1.0.0"
+spec: 263  # Enhancement Shaman
+name: "Gemini Enhancement"
+description: "Optimized for Midnight Pre-Patch with Hero Talent support"
+author: "Gemini (Munkey)"
+date: "2026-02-06"
+patch: "12.0"
+
+# ----------------------------------------------------------------------------
+# ROOT SETTINGS
+# ----------------------------------------------------------------------------
+movement_allowed: buff.spiritwalker_s_grace.up
+
+# ----------------------------------------------------------------------------
+# CONFIGURATION
+# ----------------------------------------------------------------------------
+config:
+  rotation_profile:
+    type: dropdown
+    options:
+      - label: "Icy Veins"
+        value: 1
+      - label: "Method"
+        value: 2
+    default: 1
+  
+  aoe_mode:
+    type: dropdown
+    options:
+      - label: "Auto (Enemy Count)"
+        value: 1
+      - label: "Force Single Target"
+        value: 2
+      - label: "Force AOE"
+        value: 3
+    default: 1
+    
+  aoe_threshold_count:
+    type: slider
+    min: 2
+    max: 5
+    default: 2
+    
+  use_defensives:
+    type: checkbox
+    default: true
+    
+  use_cooldowns:
+    type: checkbox
+    default: true
+    
+  pot_mode:
+    type: dropdown
+    options:
+      - label: "None"
+        value: 1
+      - label: "On Cooldowns"
+        value: 2
+    default: 1
+
+# ----------------------------------------------------------------------------
+# VARIABLES
+# ----------------------------------------------------------------------------
+variables:
+  # Hero Talent Detection
+  # Using key text from talents to identify trees
+  is_stormbringer: talent.tempest|talent.arc_discharge
+  is_totemic: talent.surging_totem|talent.lively_totems
+  
+  # Combat Checks
+  in_combat: player.combat
+  
+  # AOE Logic
+  count_enemies: active_enemies
+  is_aoe: (config.aoe_mode=1&active_enemies>=config.aoe_threshold_count)|config.aoe_mode=3
+  
+  # Cooldown Sync helper
+  burst_ready: cooldown.ascendance.ready|buff.ascendance.up
+
+# ----------------------------------------------------------------------------
+# ACTION LISTS
+# ----------------------------------------------------------------------------
+lists:
+  main:
+    - return,if=player.dead|!state.rotation|state.blocked_inputs|mounted
+    - windfury_weapon,if=!mainhand.enchant.up
+    - flametongue_weapon,if=!offhand.enchant.up&!main_hand.2h
+    - return,if=!player.combat
+    - call_action_list,name=sanity_checks
+    - call_action_list,name=auto_heal
+    - call_action_list,name=auto_target
+    - call_action_list,name=spell_queue
+    - call_action_list,name=defensives,if=config.use_defensives
+    - call_action_list,name=interrupts
+    - call_action_list,name=cooldowns,if=config.use_cooldowns&target.exists&target.range<=30&state.cds
+    
+    # Profile Selection
+    # Icy Veins
+    - call_action_list,name=icy_veins_st,if=config.rotation_profile=1&!var.is_aoe
+    - call_action_list,name=icy_veins_aoe,if=config.rotation_profile=1&var.is_aoe
+    
+    # Method
+    - call_action_list,name=method_st,if=config.rotation_profile=2&!var.is_aoe
+    - call_action_list,name=method_aoe,if=config.rotation_profile=2&var.is_aoe
+
+# ============================================================================
+# DEFENSIVES
+# ============================================================================
+  defensives:
+    - astral_shift,if=health.pct<40
+    - earth_elemental,if=health.pct<30
+    - healing_surge,if=health.pct<20&buff.maelstrom_weapon.stack>=5
+
+# ============================================================================
+# INTERRUPTS
+# ============================================================================
+  interrupts:
+    - wind_shear,if=target.casting.interruptible
+    - thunderstorm,if=target.casting.interruptible&!cooldown.wind_shear.ready
+
+# ============================================================================
+# COOLDOWNS
+# ============================================================================
+  cooldowns:
+    - feral_spirit
+    - potion,if=config.pot_mode=2&(buff.ascendance.up|target.time_to_die<30)
+    - blood_fury,if=buff.ascendance.up
+    - berserking,if=buff.ascendance.up
+    - fireblood,if=buff.ascendance.up
+    - ancestral_call,if=buff.ascendance.up
+
+# ============================================================================
+# ICY VEINS PROFILES
+# ============================================================================
+  icy_veins_st:
+    # 1. Maintain Flame Shock
+    - flame_shock,if=!dot.flame_shock.ticking
+    - voltaic_blaze,if=!dot.flame_shock.ticking
+    
+    # 2. Surging Totem (Totemic)
+    - surging_totem
+    
+    # 3. Sundering
+    # Sync with Surging Totem if present
+    - primordial_storm,override=sundering,if=buff.primordial_storm.up&(!var.is_totemic|cooldown.surging_totem.remains>20|cooldown.surging_totem.ready)
+    - sundering,if=!var.is_totemic|cooldown.surging_totem.remains>20|cooldown.surging_totem.ready
+    
+    # 4. Lava Lash with Hot Hand
+    - lava_lash,if=buff.hot_hand.up|buff.whirling_fire.up
+    
+    # 5. Ascendance (Major CD)
+    - ascendance,if=target.time_to_die>20
+    
+    # 6. Doom Winds
+    - doom_winds,if=target.distance<8
+    
+    # 7. Primordial Storm (10 stacks)
+    - primordial_storm,override=sundering,if=buff.primordial_storm.up&buff.maelstrom_weapon.stack>=10
+    
+    # 8. Crash Lightning (Doom Winds or Buff Maintenance)
+    - crash_lightning,if=buff.doom_winds.up|buff.crash_lightning.down
+    
+    # 9. Windstrike (during Ascendance)
+    - windstrike,override=stormstrike,if=buff.ascendance.up
+    
+    # 10. Stormstrike (during Doom Winds)
+    - stormstrike,if=buff.doom_winds.up
+    
+    # 11. Tempest / Lightning Bolt Spender
+    # 10 Stacks preference
+    - tempest,override=lightning_bolt,if=buff.tempest.up&buff.maelstrom_weapon.stack>=10
+    - lightning_bolt,if=buff.maelstrom_weapon.stack>=10
+    
+    # 12. Lava Lash
+    - lava_lash
+    
+    # 13. Stormstrike
+    - stormstrike
+    
+    # 14. Voltaic Blaze
+    - voltaic_blaze
+    
+    # 15. Crash Lightning
+    - crash_lightning
+    
+    # 16. Spender at 5+
+    - tempest,override=lightning_bolt,if=buff.tempest.up&buff.maelstrom_weapon.stack>=5
+    - lightning_bolt,if=buff.maelstrom_weapon.stack>=5
+    - flame_shock,if=dot.flame_shock.refreshable
+
+  icy_veins_aoe:
+    # 1. Flame Shock spread
+    - flame_shock,if=!dot.flame_shock.ticking
+    - voltaic_blaze
+    
+    # 2. Surging Totem
+    - surging_totem,if=state.cds
+    
+    # 3. Sundering
+    - primordial_storm,override=sundering,if=buff.primordial_storm.up
+    - sundering
+    
+    # 4. Lava Lash (Hot Hand)
+    - lava_lash,if=buff.hot_hand.up|buff.whirling_fire.up
+    
+    # 5. Cooldowns
+    - ascendance
+    - doom_winds,if=state.cds
+    
+    # 6. Primordial Storm (10 MSW)
+    - primordial_storm,override=sundering,if=buff.primordial_storm.up&buff.maelstrom_weapon.stack>=10
+    
+    # 7. Crash Lightning
+    - crash_lightning
+    
+    # 8. Windstrike
+    - windstrike,override=stormstrike,if=buff.ascendance.up
+    
+    # 9. Stormstrike in Doom Winds
+    - stormstrike,if=buff.doom_winds.up
+    
+    # 10. Spenders (Chain Lightning preference in AOE)
+    - tempest,override=lightning_bolt,if=buff.tempest.up&buff.maelstrom_weapon.stack>=10
+    - chain_lightning,if=buff.maelstrom_weapon.stack>=10
+    
+    # 11. Fillers
+    - lava_lash
+    - voltaic_blaze
+    - stormstrike
+    - chain_lightning,if=buff.maelstrom_weapon.stack>=5
+
+# ============================================================================
+# METHOD PROFILES
+# ============================================================================
+  method_st:
+    # Split for Hero Talents as Method strictly separates them
+    - call_action_list,name=method_st_stormbringer,if=var.is_stormbringer
+    - call_action_list,name=method_st_totemic,if=var.is_totemic
+    # Fallback to Stormbringer if neither (or base)
+    - call_action_list,name=method_st_stormbringer,if=!var.is_stormbringer&!var.is_totemic
+
+  method_st_stormbringer:
+    # 1. Crash Lightning (Doom Winds)
+    - crash_lightning,if=buff.doom_winds.up
+    
+    # 2. Stormstrike (Doom Winds)
+    - windstrike,override=stormstrike,if=buff.doom_winds.up
+    - stormstrike,if=buff.doom_winds.up
+    
+    # 3. Tempest (10 MSW)
+    - tempest,override=lightning_bolt,if=buff.tempest.up&buff.maelstrom_weapon.stack>=10
+    
+    # 4. Lightning Bolt (8+ MSW)
+    - lightning_bolt,if=buff.maelstrom_weapon.stack>=8
+    
+    # 5. Crash Lightning (Maintenance)
+    - crash_lightning
+    
+    # 6. Stormstrike (2 charges)
+    - stormstrike,if=cooldown.stormstrike.charges>=2
+    - windstrike,override=stormstrike,if=cooldown.stormstrike.charges>=2
+    
+    # 7. Lava Lash
+    - lava_lash
+    
+    # 8. Stormstrike
+    - stormstrike
+    - windstrike,override=stormstrike
+    
+    # 9. Voltaic Blaze
+    - voltaic_blaze
+    
+    # 10. Lightning Bolt (5+ MSW)
+    - tempest,override=lightning_bolt,if=buff.tempest.up&buff.maelstrom_weapon.stack>=5
+    - lightning_bolt,if=buff.maelstrom_weapon.stack>=5
+
+  method_st_totemic:
+    # 1. Lava Lash (Hot Hand)
+    - lava_lash,if=buff.hot_hand.up
+    
+    # 2. Crash Lightning (Doom Winds)
+    - crash_lightning,if=buff.doom_winds.up
+    
+    # 3. Primordial Storm
+    - primordial_storm,override=sundering,if=buff.primordial_storm.up
+    
+    # 4. Stormstrike (Doom Winds)
+    - stormstrike,if=buff.doom_winds.up
+    - windstrike,override=stormstrike,if=buff.doom_winds.up
+    
+    # 5. Lightning Bolt (8+ MSW)
+    - lightning_bolt,if=buff.maelstrom_weapon.stack>=8
+    
+    # 6. Crash Lightning
+    - crash_lightning
+    
+    # 7. Lava Lash
+    - lava_lash
+    
+    # 8. Stormstrike
+    - stormstrike
+    - windstrike,override=stormstrike
+    
+    # 9. Voltaic Blaze
+    - voltaic_blaze
+    
+    # 10. Lightning Bolt (5+)
+    - lightning_bolt,if=buff.maelstrom_weapon.stack>=5
+
+  method_aoe:
+    - call_action_list,name=method_aoe_stormbringer,if=var.is_stormbringer
+    - call_action_list,name=method_aoe_totemic,if=var.is_totemic
+    - call_action_list,name=method_aoe_stormbringer,if=!var.is_stormbringer&!var.is_totemic
+
+  method_aoe_stormbringer:
+    # 1. Crash Lightning (Doom Winds)
+    - crash_lightning,if=buff.doom_winds.up
+    
+    # 2. Stormstrike (Doom Winds)
+    - stormstrike,if=buff.doom_winds.up
+    - windstrike,override=stormstrike,if=buff.doom_winds.up
+    
+    # 3. Tempest (10 MSW) (Note: Method might prioritize Tempest over CL usually)
+    - tempest,override=lightning_bolt,if=buff.tempest.up&buff.maelstrom_weapon.stack>=10
+    
+    # 4. Chain Lightning (8+)
+    - chain_lightning,if=buff.maelstrom_weapon.stack>=8
+    
+    # 5. Crash Lightning
+    - crash_lightning
+    
+    # 6. Stormstrike (2 charges)
+    - stormstrike,if=cooldown.stormstrike.charges>=2
+    - windstrike,override=stormstrike,if=cooldown.stormstrike.charges>=2
+    
+    # 7. Lava Lash
+    - lava_lash
+    
+    # 8. Stormstrike
+    - stormstrike
+    - windstrike,override=stormstrike
+    
+    # 9. Voltaic Blaze
+    - voltaic_blaze
+    
+    # 10. Spender 5+
+    - tempest,override=lightning_bolt,if=buff.tempest.up&buff.maelstrom_weapon.stack>=5
+    - chain_lightning,if=buff.maelstrom_weapon.stack>=5
+
+  method_aoe_totemic:
+    # 1. Lava Lash (Hot Hand)
+    - lava_lash,if=buff.hot_hand.up
+    
+    # 2. Crash Lightning (Doom Winds)
+    - crash_lightning,if=buff.doom_winds.up
+    
+    # 3. Primordial Storm
+    - primordial_storm,override=sundering,if=buff.primordial_storm.up
+    
+    # 4. Stormstrike (Doom Winds)
+    - stormstrike,if=buff.doom_winds.up
+    - windstrike,override=stormstrike,if=buff.doom_winds.up
+    
+    # 5. Chain Lightning (8+)
+    - chain_lightning,if=buff.maelstrom_weapon.stack>=8
+    
+    # 6. Crash Lightning
+    - crash_lightning
+    
+    # 7. Lava Lash
+    - lava_lash
+    
+    # 8. Stormstrike
+    - stormstrike
+    - windstrike,override=stormstrike
+    
+    # 9. Voltaic Blaze
+    - voltaic_blaze
+    
+    # 10. Spender 5+
+    - chain_lightning,if=buff.maelstrom_weapon.stack>=5
