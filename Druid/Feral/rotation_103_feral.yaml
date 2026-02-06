@@ -93,8 +93,8 @@ config:
 # ----------------------------------------------------------------------------
 variables:
   # Hero talent detection
-  is_claw: talent.druid_of_the_claw
-  is_wildstalker: talent.wildstalker
+  is_claw: talent.ravage.enabled
+  is_wildstalker: talent.thriving_growth.enabled
 
   # Hero talent selection (config override or auto-detect)
   use_claw: (config.hero_talent_mode=auto&var.is_claw)|(config.hero_talent_mode=claw)
@@ -181,6 +181,7 @@ lists:
   # INTERRUPTS
   # ========================================================================
   interrupts:
+    - soothe,if=talent.soothe&target.has_enrage
     - skull_bash,if=target.casting.interruptible&interrupts.target.ready&(config.interrupt_focus|config.interrupt_all)
     - mighty_bash,if=talent.mighty_bash&target.casting.interruptible&!cooldown.skull_bash.ready&(config.interrupt_focus|config.interrupt_all)
     - typhoon,if=talent.typhoon&target.casting.interruptible&!cooldown.skull_bash.ready&(config.interrupt_focus|config.interrupt_all)
