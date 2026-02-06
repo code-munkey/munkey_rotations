@@ -26,7 +26,7 @@ config:
         value: 1
       - label: "Method"
         value: 2
-    default: 1
+    default: 0
   
   aoe_mode:
     type: dropdown
@@ -37,7 +37,7 @@ config:
         value: 2
       - label: "Force AOE"
         value: 3
-    default: 1
+    default: 0
     
   aoe_threshold_count:
     type: slider
@@ -60,7 +60,7 @@ config:
         value: 1
       - label: "On Cooldowns"
         value: 2
-    default: 1
+    default: 0
 
 # ----------------------------------------------------------------------------
 # VARIABLES
