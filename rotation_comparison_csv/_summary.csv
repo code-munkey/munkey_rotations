@@ -1,0 +1,27 @@
+Rotation Comparison Summary
+
+LLMs Being Compared:
+  - Kimi (This LLM)
+  - Claude Opus
+  - Gemini 3 Pro
+
+Sources Being Compared:
+  - Wowhead
+  - Icy Veins
+  - Method.gg
+
+Scoring Guide (1-5 or Pass/Fail):
+5/Pass,Perfect - Follows all patterns proper syntax handles edge cases
+4,Good - Minor issues mostly correct
+3,Acceptable - Works but has notable issues
+2,Poor - Significant problems may not function correctly
+1/Fail,Broken - Syntax errors wrong patterns won't work
+
+Common Failure Points:
+Uses == instead of = for equality
+movement_allowed inside variables section
+Calling lists/main explicitly
+Missing spell morphs (override)
+Wrong empowered spell handling
+Incorrect hero talent detection
+Missing parentheses for & | precedence

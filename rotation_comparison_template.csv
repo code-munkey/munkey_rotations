@@ -1,0 +1,39 @@
+# Rotation Quality Comparison Template
+# Import this into Excel/Google Sheets - each class gets its own sheet
+# Copy this template for each class and rename the sheet
+
+Class,Spec,Source,Rotation Type,Kimi (This LLM),Claude Opus,Gemini 3 Pro,Notes
+Evoker,Devastation,Wowhead,ST,,,,Syntax correctness
+Evoker,Devastation,Wowhead,AOE,,,,Hero talent detection
+Evoker,Devastation,Icy Veins,ST,,,,Config options
+Evoker,Devastation,Icy Veins,AOE,,,,List organization
+Evoker,Devastation,Method.gg,ST,,,,Empowered spell handling
+Evoker,Devastation,Method.gg,AOE,,,,Spell morph usage
+Evoker,Preservation,Wowhead,ST,,,,Healing targeting
+Evoker,Preservation,Wowhead,AOE,,,,Cycle logic
+Evoker,Preservation,Icy Veins,ST,,,,Buff/debuff checks
+Evoker,Preservation,Icy Veins,AOE,,,,Resource management
+Evoker,Preservation,Method.gg,ST,,,,Defensive handling
+Evoker,Preservation,Method.gg,AOE,,,,Group expressions
+Evoker,Augmentation,Wowhead,ST,,,,Buff priority
+Evoker,Augmentation,Wowhead,AOE,,,,Empower handling
+Evoker,Augmentation,Icy Veins,ST,,,,Support spell logic
+Evoker,Augmentation,Icy Veins,AOE,,,,Multi-target buffs
+Evoker,Augmentation,Method.gg,ST,,,,Core ability alignment
+Evoker,Augmentation,Method.gg,AOE,,,,Cooldown sync
+
+# Scoring Guide (1-5 scale or Pass/Fail):
+# 5/Pass = Perfect - Follows all patterns, proper syntax, handles edge cases
+# 4 = Good - Minor issues, mostly correct
+# 3 = Acceptable - Works but has notable issues
+# 2 = Poor - Significant problems, may not function correctly
+# 1/Fail = Broken - Syntax errors, wrong patterns, won't work
+
+# Common Failure Points to Check:
+# - Uses '==' instead of '=' for equality
+# - movement_allowed inside variables section
+# - Calling lists/main explicitly
+# - Missing spell morphs (override)
+# - Wrong empowered spell handling
+# - Incorrect hero talent detection
+# - Missing parentheses for & | precedence
