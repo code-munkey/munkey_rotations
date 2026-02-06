@@ -3,6 +3,9 @@
 # ============================================================================
 # The AI uses QUICK_REFERENCE.yaml as primary guide, and fetches specific
 # sections from reference_guide.yaml using the index when needed.
+#
+# STARTING FILE: rotation_template.yaml contains the must-have structure.
+# Copy it as a base and adapt for the specific class/spec.
 # ============================================================================
 
 STEP 1: REFERENCE PREPARATION
@@ -11,11 +14,12 @@ STEP 1: REFERENCE PREPARATION
 Read these files in order:
   1. QUICK_REFERENCE.yaml           # Primary guide (~400 lines)
   2. reference_guide_index.yaml     # Index for detailed lookups
+  3. rotation_template.yaml         # Starting template with must-haves
 
 You do NOT need to read the full reference_guide.yaml upfront.
 Use the index to fetch only relevant sections as needed during implementation.
 
-STOP: Confirm once you've reviewed the quick reference and index.
+STOP: Confirm once you've reviewed the quick reference, index, and template.
 
 STEP 2: GUIDE RESEARCH (After Approval)
 =======================================
@@ -26,7 +30,10 @@ PROFILES TO IMPLEMENT:
   1. [Source 1 - e.g., "Wowhead"]    
      URL: [provide URL if known, or AI searches]
      
-  2. [Source 2 - e.g., "Method.gg"]
+  2. [Source 2 - e.g., "Icy Veins"]
+     URL: [provide URL if known, or AI searches]
+
+  3. [Source 3 - e.g., "Method.gg"]
      URL: [provide URL if known, or AI searches]
 
 If URLs are not provided, search for:
@@ -41,7 +48,7 @@ For each guide, extract:
   - Resource pooling guidelines
   - Any special mechanics (empowered spells, procs, etc.)
 
-STOP: After extracting both guides, STOP and summarize your findings:
+STOP: After extracting all guides, STOP and summarize your findings:
   - Key differences between the profiles
   - Any unclear mechanics that need clarification
   - Hero talent detection needed (list them)
@@ -51,7 +58,15 @@ Wait for my approval before implementing.
 STEP 3: IMPLEMENTATION (After Approval)
 =======================================
 
-⚠️  CRITICAL: Build the rotation from SCRATCH using QUICK_REFERENCE.yaml 
+⚠️  CRITICAL: Start by copying rotation_template.yaml as your base file!
+    This ensures all must-have structure is present:
+      - Metadata header (version, spec, name, description, author, date, patch)
+      - movement_allowed at ROOT level
+      - Config: profile dropdown + aoe_threshold + defensives toggle
+      - Variables: hero talent detection, pooling logic
+      - Lists: main, defensives, cooldowns, [profile1]_st, [profile1]_aoe, etc.
+
+⚠️  CRITICAL: Build the rotation content from SCRATCH using QUICK_REFERENCE.yaml 
     as primary guide. Fetch specific sections from reference_guide.yaml 
     using the index ONLY when you need to verify syntax or look up edge cases.
     DO NOT copy patterns from existing rotation files!
@@ -67,26 +82,29 @@ STEP 3: IMPLEMENTATION (After Approval)
 
 Create file: [Class]/{LLM}_rotation_{CLASS_ID}_{AUTHOR}.yaml
 
-Required structure:
-  - Metadata header (version, spec, name, description, author, date, patch)
-  - movement_allowed (if caster with mobility)
-  - Config: profile dropdown + aoe_threshold + defensives toggle
-  - Variables: hero talent detection, pooling logic
-  - Lists: main, defensives, cooldowns, [profile1]_st, [profile1]_aoe, [profile2]_st, [profile2]_aoe
-  - Actions: entry point
+Implementation steps:
+  1. Copy rotation_template.yaml content as starting point
+  2. Update metadata header with correct spec ID and description
+  3. Adjust hero talent names in variables section for your class
+  4. Rename source1/source2/source3 to actual guide names (wowhead, icyveins, method)
+  5. Fill in each [source]_st and [source]_aoe list with priority from guides
+  6. Add spell morphs with override= as needed from morph_database
 
 When unsure about syntax, fetch the relevant section from reference_guide.yaml:
   - Example: ReadFile(path="reference_guide.yaml", line_offset=635, n_lines=225) 
     gets step_options (lines 635-859)
 
 Before final submission, verify:
-  [ ] movement_allowed at ROOT level
+  [ ] Copied rotation_template.yaml as starting file
+  [ ] Metadata header complete with spec ID
+  [ ] movement_allowed at ROOT level (not in variables!)
   [ ] main list auto-executed (not called explicitly)
   [ ] Using '=' not '==' for equality
   [ ] Parentheses for & | precedence
   [ ] Empowered spells use ignore_usable + ignore_cooldown + casting_check
   [ ] All non-main lists called via call_action_list
   [ ] Config referenced as config.name, variables as var.name
+  [ ] Spell morphs checked in morph_database/{class}_morphs.yaml
 
 # ============================================================================
 # QUICK START - MINIMAL INPUT
@@ -97,7 +115,8 @@ Before final submission, verify:
 # ---
 # Create rotation profiles for [CLASS] [SPEC] based on:
 #   1. Wowhead guide
-#   2. Method.gg guide
+#   2. Icy Veins guide
+#   3. Method.gg guide
 # 
 # File: [Class]/{LLM}_rotation_[ID]_[author].yaml
 # ---
@@ -105,9 +124,10 @@ Before final submission, verify:
 # The AI will:
 #   - Read QUICK_REFERENCE.yaml (primary)
 #   - Read reference_guide_index.yaml (for lookups)
+#   - Read rotation_template.yaml (starting structure)
 #   - Find the guides automatically
 #   - Extract rotation details
-#   - Implement both profiles
+#   - Copy template as base and implement all profiles
 #   - Add hero talent detection if needed
 #   - Fetch reference sections as needed for verification
 #

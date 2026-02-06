@@ -1,0 +1,200 @@
+# ============================================================================
+# ROTATION TEMPLATE - Must-have structure for new rotations
+# ============================================================================
+# Copy this file as a starting point for new class/spec rotations
+# Then adapt the content based on the guides and QUICK_REFERENCE.yaml
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# METADATA HEADER (Required)
+# ----------------------------------------------------------------------------
+version: "1.0.0"                    # Rotation version
+spec: 000                           # Class/Spec ID (e.g., 1467 = Devastation Evoker)
+name: "Class Spec - Multi-Profile"  # Display name
+description: "Source1/Source2/Source3 profiles with hero talent detection"
+author: "Your Name"                 # Author credit
+date: "2026-02-06"                  # Creation/update date
+patch: "12.0"                       # WoW patch version
+
+# ----------------------------------------------------------------------------
+# ROOT LEVEL: Movement handling (NOT in variables section!)
+# ----------------------------------------------------------------------------
+# For casters with mobility spells:
+# movement_allowed: buff.ice_floes.up|buff.hover.up
+# For melee/instant-heavy specs:
+movement_allowed: true
+
+# ----------------------------------------------------------------------------
+# CONFIG: User settings UI
+# ----------------------------------------------------------------------------
+config:
+  # Profile selection (different guide sources)
+  rotation_profile:
+    type: dropdown
+    options:
+      - label: "Source1 (e.g., Wowhead)"
+        value: source1
+      - label: "Source2 (e.g., Icy Veins)"
+        value: source2
+      - label: "Source3 (e.g., Method)"
+        value: source3
+    default: 0
+
+  # AOE threshold for switching to AOE rotation
+  aoe_threshold:
+    type: slider
+    min: 2
+    max: 8
+    value: 3
+
+  # Defensive abilities toggle
+  use_defensives:
+    type: checkbox
+    value: true
+
+  # Hero talent override (optional but recommended)
+  hero_talent_mode:
+    type: dropdown
+    options:
+      - label: "Auto (Detect)"
+        value: auto
+      - label: "Hero Talent 1"
+        value: hero1
+      - label: "Hero Talent 2"
+        value: hero2
+    default: 0
+
+# ----------------------------------------------------------------------------
+# VARIABLES: Reusable expressions
+# ----------------------------------------------------------------------------
+variables:
+  # Hero talent detection (adjust names for your class)
+  is_hero1: talent.hero_talent_1
+  is_hero2: talent.hero_talent_2
+
+  # Hero talent selection (config override or auto-detect)
+  use_hero1: (config.hero_talent_mode=auto&var.is_hero1)|(config.hero_talent_mode=hero1)
+  use_hero2: (config.hero_talent_mode=auto&var.is_hero2)|(config.hero_talent_mode=hero2)
+
+  # Profile selection variables
+  use_source1: config.rotation_profile=source1
+  use_source2: config.rotation_profile=source2
+  use_source3: config.rotation_profile=source3
+
+  # AOE detection
+  use_aoe: active_enemies>=config.aoe_threshold
+
+  # Cooldown windows (adjust for your class)
+  in_burst: buff.major_cooldown.up
+  in_execute: target.health.pct<20
+
+  # Resource checks (adjust for your class resource)
+  resource_high: resource>=80
+  resource_low: resource<30
+
+# ----------------------------------------------------------------------------
+# LISTS: Action lists
+# ----------------------------------------------------------------------------
+lists:
+  # ========================================================================
+  # MAIN ENTRY POINT (Auto-executed - NO explicit call needed!)
+  # ========================================================================
+  main:
+    # Sanity checks
+    - return,if=player.dead
+    - return,if=!player.combat&!target.combat
+
+    # Defensive handling
+    - call_action_list,name=defensives,if=config.use_defensives
+
+    # Cooldown management
+    - call_action_list,name=cooldowns
+
+    # Profile routing - Source 1
+    - call_action_list,name=source1_st,if=var.use_source1&!var.use_aoe
+    - call_action_list,name=source1_aoe,if=var.use_source1&var.use_aoe
+
+    # Profile routing - Source 2
+    - call_action_list,name=source2_st,if=var.use_source2&!var.use_aoe
+    - call_action_list,name=source2_aoe,if=var.use_source2&var.use_aoe
+
+    # Profile routing - Source 3
+    - call_action_list,name=source3_st,if=var.use_source3&!var.use_aoe
+    - call_action_list,name=source3_aoe,if=var.use_source3&var.use_aoe
+
+  # ========================================================================
+  # DEFENSIVES (Shared across all profiles)
+  # ========================================================================
+  defensives:
+    - major_defensive,if=health.pct<30
+    - self_heal,if=health.pct<50
+
+  # ========================================================================
+  # COOLDOWNS (Shared across all profiles)
+  # ========================================================================
+  cooldowns:
+    - major_cooldown,if=target.boss&target.time_to_die>30
+    - trinket_1,if=trinket_1.sync
+    - trinket_2,if=trinket_2.sync
+
+  # ========================================================================
+  # SOURCE 1 - SINGLE TARGET
+  # Based on: [Source URL]
+  # Focus: [Brief description of this profile's philosophy]
+  # ========================================================================
+  source1_st:
+    # Example priority structure:
+    # 1. Execute abilities
+    # 2. Maintain buffs/debuffs
+    # 3. Cooldown windows
+    # 4. Resource spenders
+    # 5. Builders
+    # 6. Fillers
+
+    - execute_spell,if=var.in_execute
+    - buff_spell,if=buff.buff_name.down
+    - debuff_spell,if=debuff.debuff_name.refreshable
+    - spender,if=resource>=80
+    - builder,if=resource<80
+    - filler
+
+  # ========================================================================
+  # SOURCE 1 - AOE
+  # ========================================================================
+  source1_aoe:
+    - aoe_spell,if=active_enemies>=3
+    # ... AOE priority list
+
+  # ========================================================================
+  # SOURCE 2 - SINGLE TARGET
+  # Based on: [Source URL]
+  # Focus: [Brief description of this profile's philosophy]
+  # ========================================================================
+  source2_st:
+    # ... ST priority list
+
+  # ========================================================================
+  # SOURCE 2 - AOE
+  # ========================================================================
+  source2_aoe:
+    # ... AOE priority list
+
+  # ========================================================================
+  # SOURCE 3 - SINGLE TARGET
+  # Based on: [Source URL]
+  # Focus: [Brief description of this profile's philosophy]
+  # ========================================================================
+  source3_st:
+    # ... ST priority list
+
+  # ========================================================================
+  # SOURCE 3 - AOE
+  # ========================================================================
+  source3_aoe:
+    # ... AOE priority list
+
+# ----------------------------------------------------------------------------
+# ACTIONS: Alternative entry point
+# ----------------------------------------------------------------------------
+# Note: Using lists.main as the auto-executed entry point above
+# Only use this section if you don't have a lists.main
