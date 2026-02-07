@@ -18,7 +18,7 @@ config:
     options:
       - label: "WoWHead"
         value: 1
-      - label: "Method.gg"
+      - label: "Method.gg (Recommended)"
         value: 2
       - label: "Icy Veins"
         value: 3
@@ -73,8 +73,8 @@ variables:
   enrage_down: buff.enrage.down
 
   # Improved Whirlwind check for cleave
-  needs_cleave_buff: active_enemies>=config.aoe_threshold&!buff.improved_whirlwind.up
-  cleave_buff_refresh: buff.improved_whirlwind.remains<3&active_enemies>=config.aoe_threshold
+  needs_cleave_buff: active_enemies>=config.aoe_threshold&!buff.whirlwind.up
+  cleave_buff_refresh: buff.whirlwind.stacks=0&active_enemies>=config.aoe_threshold
 
   # Sudden Death proc management
   sudden_death_high_prio: buff.sudden_death.stack>=2|buff.sudden_death.remains<3
@@ -180,7 +180,7 @@ lists:
     - bloodthirst,if=!buff.bloodborne.up|buff.enrage.remains<4
 
     # Raging Blow with charges
-    - raging_blow,if=charges>=2&buff.surge_of_adrenaline.down
+    - raging_blow,if=cooldown.raging_blow.charges>=2&buff.surge_of_adrenaline.down
 
     # Execute with Sudden Death
     - execute,if=buff.sudden_death.up
@@ -226,14 +226,14 @@ lists:
     - odyns_fury,if=buff.bloodborne.up
 
     # Bloodthirst and Raging Blow with cleave
-    - bloodthirst,if=buff.improved_whirlwind.up
-    - raging_blow,if=buff.improved_whirlwind.up&charges>=1
+    - bloodthirst,if=buff.whirlwind.up
+    - raging_blow,if=buff.whirlwind.up&cooldown.raging_blow.charges>=1
 
     # Execute
     - execute,if=buff.sudden_death.up
 
     # Maintain cleave buff
-    - whirlwind,if=buff.improved_whirlwind.down
+    - whirlwind,if=buff.whirlwind.down
 
     # Rampage
     - rampage,if=var.rampage_rage
@@ -246,7 +246,7 @@ lists:
   # ========================================================================
   method_st:
     # Opener: Charge → Bloodthirst → Recklessness → Rampage
-    - charge,if=player.combat.time<3&range>8
+    - charge,if=player.combat.time<3&target.range>8
     - bloodthirst,if=player.combat.time<4
 
     # Recklessness/Avatar opener burst
@@ -267,7 +267,7 @@ lists:
 
     # Morphed abilities during Recklessness
     - bloodbath,override=bloodthirst,if=buff.bloodbath.up&!buff.bloodborne.up
-    - crushing_blow,override=raging_blow,if=buff.crushing_blow.up&charges>=2
+    - crushing_blow,override=raging_blow,if=buff.crushing_blow.up&cooldown.crushing_blow.charges>=2
 
     # Odyn's Fury
     - odyns_fury,if=cooldown.odyns_fury.ready
@@ -334,16 +334,16 @@ lists:
     - odyns_fury,if=cooldown.odyns_fury.ready
 
     # Bloodthirst with cleave buff
-    - bloodthirst,if=buff.improved_whirlwind.up
+    - bloodthirst,if=buff.whirlwind.up
 
     # Raging Blow with cleave
-    - raging_blow,if=buff.improved_whirlwind.up
+    - raging_blow,if=buff.whirlwind.up
 
     # Execute Sudden Death
     - execute,if=buff.sudden_death.up
 
     # Refresh cleave
-    - whirlwind,if=buff.improved_whirlwind.down
+    - whirlwind,if=buff.whirlwind.down
 
     # Rampage
     - rampage,if=var.rampage_rage
@@ -380,7 +380,7 @@ lists:
     - bloodthirst,if=!buff.enrage.up|buff.bloodborne.remains<4
 
     # Raging Blow charges
-    - raging_blow,if=charges>=2
+    - raging_blow,if=cooldown.raging_blow.charges>=2
 
     # Execute Sudden Death
     - execute,if=buff.sudden_death.up
@@ -427,16 +427,16 @@ lists:
     - odyns_fury,if=buff.bloodborne.up
 
     # Bloodthirst with cleave buff
-    - bloodthirst,if=buff.improved_whirlwind.up
+    - bloodthirst,if=buff.whirlwind.up
 
     # Raging Blow with cleave
-    - raging_blow,if=buff.improved_whirlwind.up&charges>=1
+    - raging_blow,if=buff.whirlwind.up&cooldown.raging_blow.charges>=1
 
     # Execute
     - execute,if=buff.sudden_death.up
 
     # Refresh cleave buff
-    - whirlwind,if=buff.improved_whirlwind.down
+    - whirlwind,if=buff.whirlwind.down
 
     # Rampage
     - rampage,if=var.rampage_rage
