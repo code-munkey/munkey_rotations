@@ -1,0 +1,475 @@
+# ============================================================================
+# Assassination Rogue - Multi-Profile Rotation
+# ============================================================================
+# Profiles: Wowhead / Icy Veins / Method.gg
+# Patch: 12.0.1 (Midnight Pre-Patch)
+# Hero Talents: Fatebound (recommended) | Deathstalker
+# ============================================================================
+#
+# GUIDE RESEARCH SUMMARY
+# ============================================================================
+# Sources:
+#   Wowhead  : https://www.wowhead.com/guide/classes/rogue/assassination/rotation-cooldowns-pve-dps
+#   Icy Veins: https://www.icy-veins.com/wow/assassination-rogue-pve-dps-rotation-cooldowns-abilities
+#   Method   : https://www.method.gg/guides/assassination-rogue/playstyle-and-rotation
+#
+# KEY MECHANICS:
+#   - Garrote: Primary DoT, apply from Vanish for Improved Garrote buff
+#   - Mutilate: Primary builder (2 CP)
+#   - Rupture: Finisher DoT (5+ CP), maintain uptime
+#   - Envenom: Primary finisher (5+ CP), maintain buff uptime
+#   - Deathmark: 2-min CD, doubles bleeds/poisons, align all CDs to it
+#   - Kingsbane: 1-min CD, ramps with poison applications, sync with Deathmark
+#   - Vanish: 2-min CD, enables Improved Garrote, sync with Deathmark
+#   - Crimson Tempest: AoE finisher that spreads bleeds to all targets
+#   - Fan of Knives: AoE builder (use after bleeds are spread)
+#   - Thistle Tea: Energy CD, use alongside Kingsbane (Icy Veins / Method)
+#   - Ambush: Available via Blindside proc (Deathstalker hero talent)
+#
+# HERO TALENT DIFFERENCES:
+#   Fatebound (recommended all content):
+#     - Simpler rotation, no extra tracking needed
+#     - Lucky Coin (454419) can cause Mutilate to generate extra CP - watch for overcap
+#     - Envenom at 5+ CP
+#   Deathstalker:
+#     - Apply Garrote to set Deathstalker's Mark (457052)
+#     - Envenom at max CP when Darkest Night (457058) is active (minor ~1% gain)
+#     - Ambush available via Blindside proc
+#     - Cannot target-swap easily (mark is fixed)
+#
+# PROFILE DIFFERENCES:
+#   Wowhead  : Priority-list focused, Fatebound recommended, Vanish+Garrote before Deathmark
+#   Icy Veins: More detailed, includes Thistle Tea, Ambush/Blindside, energy pooling
+#   Method   : Simplified, same core, notes Shiv/Indiscriminate Carnage removed in Midnight
+#
+# TRINKET: Cursed Stone Idol - use off cooldown (trinket_1.usable & trinket_1.ready)
+# ============================================================================
+
+version: "1.0.0"
+spec: 259
+name: "Assassination Rogue - Multi-Profile"
+description: "Wowhead / Icy Veins / Method.gg profiles with Fatebound and Deathstalker hero talent detection"
+author: "munkey"
+date: "2026-02-23"
+patch: "12.0.1"
+
+# ----------------------------------------------------------------------------
+# ROOT LEVEL: Movement handling
+# Assassination is melee with instant-cast abilities - movement allowed
+# ----------------------------------------------------------------------------
+movement_allowed: true
+
+# ----------------------------------------------------------------------------
+# CONFIG: User settings UI
+# ----------------------------------------------------------------------------
+config:
+  # Profile selection
+  rotation_profile:
+    type: dropdown
+    options:
+      - label: "Wowhead"
+        value: wowhead
+      - label: "Icy Veins"
+        value: icyveins
+      - label: "Method.gg"
+        value: method
+    default: 0
+
+  # AOE threshold for switching to AOE rotation
+  aoe_threshold:
+    type: slider
+    min: 2
+    max: 8
+    value: 3
+
+  # Defensive abilities toggle
+  use_defensives:
+    type: checkbox
+    value: true
+
+  # Hero talent override
+  hero_talent_mode:
+    type: dropdown
+    options:
+      - label: "Auto (Detect)"
+        value: auto
+      - label: "Fatebound"
+        value: fatebound
+      - label: "Deathstalker"
+        value: deathstalker
+    default: 0
+
+  # Thistle Tea usage (Icy Veins / Method recommend alongside Kingsbane)
+  use_thistle_tea:
+    type: checkbox
+    value: true
+
+  # Crimson Vial health threshold
+  crimson_vial_pct:
+    type: slider
+    min: 20
+    max: 60
+    value: 35
+
+# ----------------------------------------------------------------------------
+# VARIABLES: Reusable expressions
+# ----------------------------------------------------------------------------
+variables:
+  # === HERO TALENT DETECTION ===
+  is_fatebound: talent.fatebound
+  is_deathstalker: talent.deathstalker
+
+  # Hero talent selection (config override or auto-detect)
+  use_fatebound: (config.hero_talent_mode=auto&var.is_fatebound)|(config.hero_talent_mode=fatebound)
+  use_deathstalker: (config.hero_talent_mode=auto&var.is_deathstalker)|(config.hero_talent_mode=deathstalker)
+
+  # === PROFILE SELECTION ===
+  use_wowhead: config.rotation_profile=wowhead
+  use_icyveins: config.rotation_profile=icyveins
+  use_method: config.rotation_profile=method
+
+  # === AOE DETECTION ===
+  use_aoe: active_enemies>=config.aoe_threshold
+
+  # === COMBO POINTS ===
+  cp_max: combo_points=combo_points.max
+  cp_high: combo_points>=5
+  cp_low: combo_points<3
+
+  # === COOLDOWN WINDOWS ===
+  deathmark_up: buff.deathmark.up
+  deathmark_ready: cooldown.deathmark.ready
+  kingsbane_ready: cooldown.kingsbane.ready
+  vanish_ready: cooldown.vanish.ready
+
+  # Burst window: Deathmark is active
+  in_burst: var.deathmark_up
+
+  # Sync window: Deathmark coming up soon (pool resources)
+  deathmark_soon: cooldown.deathmark.remains<10
+
+  # === DOT MAINTENANCE ===
+  garrote_refreshable: debuff.garrote.refreshable
+  garrote_down: debuff.garrote.down
+  rupture_refreshable: debuff.rupture.refreshable
+  rupture_down: debuff.rupture.down
+
+  # Improved Garrote buff (from Vanish/stealth)
+  improved_garrote_up: buff.improved_garrote.up
+
+  # === DEATHSTALKER SPECIFIC ===
+  deathstalkers_mark_down: debuff.deathstalkers_mark.down
+  darkest_night_up: buff.darkest_night.up
+  blindside_up: buff.blindside.up
+
+  # Deathstalker: use Envenom at max CP when Darkest Night is active
+  ds_envenom_now: var.use_deathstalker&var.darkest_night_up&var.cp_max
+
+  # === ENERGY POOLING ===
+  # Pool energy before Deathmark window (Icy Veins recommends ~30+ energy floor)
+  energy_pooling: var.deathmark_soon&energy<80
+
+  # === DEFENSIVE ===
+  health_low: health.pct<config.crimson_vial_pct
+  health_critical: health.pct<25
+
+# ----------------------------------------------------------------------------
+# LISTS: Action lists
+# ----------------------------------------------------------------------------
+lists:
+  # ========================================================================
+  # MAIN ENTRY POINT (Auto-executed - NO explicit call needed!)
+  # ========================================================================
+  main:
+    # Sanity checks
+    - return,if=player.dead
+    - return,if=!player.combat&!target.combat
+
+    # Defensive handling
+    - call_action_list,name=defensives,if=config.use_defensives
+
+    # Interrupts
+    - kick,if=interrupts.target.ready
+
+    # Cooldown management (shared across all profiles)
+    - call_action_list,name=cooldowns
+
+    # Profile routing - Wowhead
+    - call_action_list,name=wowhead_st,if=var.use_wowhead&!var.use_aoe
+    - call_action_list,name=wowhead_aoe,if=var.use_wowhead&var.use_aoe
+
+    # Profile routing - Icy Veins
+    - call_action_list,name=icyveins_st,if=var.use_icyveins&!var.use_aoe
+    - call_action_list,name=icyveins_aoe,if=var.use_icyveins&var.use_aoe
+
+    # Profile routing - Method.gg
+    - call_action_list,name=method_st,if=var.use_method&!var.use_aoe
+    - call_action_list,name=method_aoe,if=var.use_method&var.use_aoe
+
+  # ========================================================================
+  # DEFENSIVES (Shared across all profiles)
+  # ========================================================================
+  defensives:
+    - crimson_vial,if=var.health_low&cooldown.crimson_vial.ready
+    - feint,if=defensives.ready.aoe
+    - evasion,if=var.health_critical&cooldown.evasion.ready
+    - cloak_of_shadows,if=var.health_critical&cooldown.cloak_of_shadows.ready
+    - healthstone,if=healthstone.ready&var.health_critical
+
+  # ========================================================================
+  # COOLDOWNS (Shared across all profiles)
+  # ========================================================================
+  # Deathmark: 2-min CD - use on cooldown, align Vanish+Garrote before it
+  # Kingsbane: 1-min CD - sync with Deathmark every 2 min, use on CD otherwise
+  # Vanish: 2-min CD - use before Deathmark to apply Improved Garrote
+  # Thistle Tea: Energy CD - use alongside Kingsbane
+  # Trinket: Cursed Stone Idol - use off cooldown
+  cooldowns:
+    # Vanish before Deathmark to apply Improved Garrote (all guides agree)
+    - vanish,if=var.vanish_ready&(cooldown.deathmark.remains<3|var.deathmark_up)&!buff.stealth.up&!buff.vanish.up
+
+    # Garrote from stealth/vanish for Improved Garrote
+    - garrote,if=(buff.stealth.up|buff.vanish.up)&(!debuff.garrote.up|var.garrote_refreshable)
+
+    # Deathmark: use on cooldown (all guides agree)
+    - deathmark,if=var.deathmark_ready&target.time_to_die>20
+
+    # Kingsbane: sync with Deathmark when possible, otherwise use on CD
+    - kingsbane,if=var.kingsbane_ready&(var.deathmark_up|cooldown.deathmark.remains>30)
+
+    # Thistle Tea: use alongside Kingsbane to avoid overcapping (Icy Veins / Method)
+    - thistle_tea,if=config.use_thistle_tea&cooldown.thistle_tea.ready&(var.kingsbane_ready|buff.kingsbane.up)
+
+    # Trinket: Cursed Stone Idol - use off cooldown
+    - trinket_1,if=trinket_1.usable&trinket_1.ready
+    - trinket_2,if=trinket_2.usable&trinket_2.ready
+
+  # ========================================================================
+  # WOWHEAD - SINGLE TARGET
+  # Source: https://www.wowhead.com/guide/classes/rogue/assassination/rotation-cooldowns-pve-dps
+  # Focus: Priority-list based, Fatebound recommended, Vanish+Garrote before Deathmark
+  #
+  # Priority (Fatebound):
+  #   1. Maintain Garrote
+  #   2. Mutilate until 5+ CP
+  #   3. Maintain Rupture at 5+ CP
+  #   4. Vanish + Garrote for Improved Garrote (sync with Deathmark)
+  #   5. Deathmark on cooldown
+  #   6. Kingsbane on cooldown, immediately after Deathmark
+  #   7. Envenom at 5+ CP
+  #
+  # Priority (Deathstalker additions):
+  #   - Envenom at max CP when Darkest Night is active (before normal Envenom)
+  # ========================================================================
+  wowhead_st:
+    # Deathstalker: Envenom at max CP when Darkest Night is active
+    - envenom,if=var.ds_envenom_now
+
+    # Maintain Garrote (highest priority DoT)
+    - garrote,if=var.garrote_refreshable&!buff.stealth.up&!buff.vanish.up
+
+    # Deathstalker: apply Garrote to set Deathstalker's Mark if missing
+    - garrote,if=var.use_deathstalker&var.deathstalkers_mark_down&!buff.stealth.up&!buff.vanish.up
+
+    # Maintain Rupture at 5+ CP
+    - rupture,if=var.cp_high&var.rupture_refreshable
+
+    # Envenom at 5+ CP (primary finisher, maintain buff)
+    - envenom,if=var.cp_high
+
+    # Mutilate as primary builder
+    - mutilate,if=!var.cp_max
+
+  # ========================================================================
+  # WOWHEAD - AOE
+  # Source: https://www.wowhead.com/guide/classes/rogue/assassination/rotation-cooldowns-pve-dps
+  # Focus: Spread bleeds via Crimson Tempest, then Envenom for poison cleave
+  #
+  # Priority:
+  #   1. Maintain Garrote on main target
+  #   2. Maintain Rupture on main target at 5+ CP
+  #   3. Crimson Tempest to spread bleeds until 5+ CP or all targets debuffed
+  #   4. Fan of Knives if all targets have bleeds
+  #   5. Vanish + Garrote for Improved Garrote (sync with Deathmark in M+)
+  #   6. Deathmark on cooldown
+  #   7. Kingsbane on cooldown
+  #   8. Envenom at 5+ CP
+  # ========================================================================
+  wowhead_aoe:
+    # Deathstalker: Envenom at max CP when Darkest Night is active
+    - envenom,if=var.ds_envenom_now
+
+    # Maintain Garrote on main target
+    - garrote,if=var.garrote_refreshable&!buff.stealth.up&!buff.vanish.up
+
+    # Deathstalker: apply Garrote to set Deathstalker's Mark if missing
+    - garrote,if=var.use_deathstalker&var.deathstalkers_mark_down&!buff.stealth.up&!buff.vanish.up
+
+    # Maintain Rupture on main target at 5+ CP
+    - rupture,if=var.cp_high&var.rupture_refreshable
+
+    # Crimson Tempest to spread bleeds (use until 5+ CP or all targets have bleeds)
+    - crimson_tempest,if=var.cp_high&active_enemies>=2
+
+    # Fan of Knives as AoE builder (after bleeds are spread)
+    - fan_of_knives,if=!var.cp_max
+
+    # Envenom at 5+ CP
+    - envenom,if=var.cp_high
+
+    # Mutilate as fallback builder on single target
+    - mutilate,if=!var.cp_max&active_enemies<2
+
+  # ========================================================================
+  # ICY VEINS - SINGLE TARGET
+  # Source: https://www.icy-veins.com/wow/assassination-rogue-pve-dps-rotation-cooldowns-abilities
+  # Focus: Detailed priority with Thistle Tea, Ambush/Blindside, energy pooling
+  #
+  # Priority (Fatebound):
+  #   1. Maintain Garrote (from Vanish when possible)
+  #   2. Maintain Rupture at 5+ CP
+  #   3. Deathmark when available
+  #   4. Kingsbane on CD, sync with Deathmark
+  #   5. Envenom at 5+ CP
+  #   6. Ambush when Blindside procs (usable)
+  #   7. Mutilate as builder
+  #   8. Thistle Tea alongside Kingsbane
+  #
+  # Priority (Deathstalker additions):
+  #   - Envenom at 7 CP when Darkest Night is active
+  #   - Ambush as builder via Blindside proc
+  # ========================================================================
+  icyveins_st:
+    # Deathstalker: Envenom at max CP when Darkest Night is active
+    - envenom,if=var.ds_envenom_now
+
+    # Maintain Garrote (from Vanish when possible - handled in cooldowns list)
+    - garrote,if=var.garrote_refreshable&!buff.stealth.up&!buff.vanish.up
+
+    # Deathstalker: apply Garrote to set Deathstalker's Mark if missing
+    - garrote,if=var.use_deathstalker&var.deathstalkers_mark_down&!buff.stealth.up&!buff.vanish.up
+
+    # Maintain Rupture at 5+ CP
+    - rupture,if=var.cp_high&var.rupture_refreshable
+
+    # Envenom at 5+ CP (maintain buff, chain casts during burst)
+    - envenom,if=var.cp_high
+
+    # Ambush via Blindside proc (Deathstalker and Fatebound can both get this)
+    - ambush,if=var.blindside_up
+
+    # Mutilate as primary builder
+    - mutilate,if=!var.cp_max
+
+  # ========================================================================
+  # ICY VEINS - AOE
+  # Source: https://www.icy-veins.com/wow/assassination-rogue-pve-dps-rotation-cooldowns-abilities
+  # Focus: Crimson Tempest to spread bleeds, Fan of Knives as AoE builder
+  #
+  # Priority (Fatebound):
+  #   1. Maintain Garrote and Rupture on all targets via Crimson Tempest
+  #   2. Crimson Tempest as AoE builder to spread bleeds
+  #   3. Fan of Knives if all targets have bleeds
+  #   4. Deathmark when available
+  #   5. Kingsbane on CD
+  #   6. Vanish to re-apply Improved Garrote if DoTs running out (20+ sec pack)
+  #   7. Envenom at 5+ CP
+  #   8. Thistle Tea alongside Kingsbane
+  # ========================================================================
+  icyveins_aoe:
+    # Deathstalker: Envenom at max CP when Darkest Night is active
+    - envenom,if=var.ds_envenom_now
+
+    # Maintain Garrote on main target
+    - garrote,if=var.garrote_refreshable&!buff.stealth.up&!buff.vanish.up
+
+    # Deathstalker: apply Garrote to set Deathstalker's Mark if missing
+    - garrote,if=var.use_deathstalker&var.deathstalkers_mark_down&!buff.stealth.up&!buff.vanish.up
+
+    # Maintain Rupture on main target at 5+ CP
+    - rupture,if=var.cp_high&var.rupture_refreshable
+
+    # Crimson Tempest to spread bleeds to all targets (AoE finisher)
+    - crimson_tempest,if=var.cp_high&active_enemies>=2
+
+    # Fan of Knives as AoE builder (after bleeds are spread)
+    - fan_of_knives,if=!var.cp_max
+
+    # Envenom at 5+ CP
+    - envenom,if=var.cp_high
+
+    # Mutilate as fallback builder
+    - mutilate,if=!var.cp_max&active_enemies<2
+
+  # ========================================================================
+  # METHOD.GG - SINGLE TARGET
+  # Source: https://www.method.gg/guides/assassination-rogue/playstyle-and-rotation
+  # Focus: Simplified approach - maintain Garrote/Rupture, maximize Envenom uptime
+  #        Generate combo points, spend on Envenom. Sync Kingsbane with Deathmark.
+  #
+  # Priority:
+  #   1. Maintain Garrote (apply Improved Garrote via Vanish before Deathmark)
+  #   2. Maintain Rupture at 5+ CP
+  #   3. Deathmark on cooldown
+  #   4. Kingsbane on cooldown, sync with Deathmark every 2 min
+  #   5. Envenom at 5+ CP (maximize buff uptime)
+  #   6. Mutilate as builder
+  # ========================================================================
+  method_st:
+    # Deathstalker: Envenom at max CP when Darkest Night is active
+    - envenom,if=var.ds_envenom_now
+
+    # Maintain Garrote (highest priority)
+    - garrote,if=var.garrote_refreshable&!buff.stealth.up&!buff.vanish.up
+
+    # Deathstalker: apply Garrote to set Deathstalker's Mark if missing
+    - garrote,if=var.use_deathstalker&var.deathstalkers_mark_down&!buff.stealth.up&!buff.vanish.up
+
+    # Maintain Rupture at 5+ CP
+    - rupture,if=var.cp_high&var.rupture_refreshable
+
+    # Envenom at 5+ CP (maximize buff uptime - core of Method's philosophy)
+    - envenom,if=var.cp_high
+
+    # Mutilate as primary builder
+    - mutilate,if=!var.cp_max
+
+  # ========================================================================
+  # METHOD.GG - AOE
+  # Source: https://www.method.gg/guides/assassination-rogue/playstyle-and-rotation
+  # Focus: Spread bleeds to all targets, then Fan of Knives as builder
+  #        Crimson Tempest reworked as generator that spreads bleeds
+  #
+  # Priority:
+  #   1. Maintain Garrote on main target
+  #   2. Maintain Rupture on main target at 5+ CP
+  #   3. Spread bleeds to all targets (Crimson Tempest)
+  #   4. Fan of Knives if all targets have bleeds and no 5+ CP
+  #   5. Deathmark on cooldown
+  #   6. Kingsbane on cooldown
+  #   7. Envenom at 5+ CP
+  # ========================================================================
+  method_aoe:
+    # Deathstalker: Envenom at max CP when Darkest Night is active
+    - envenom,if=var.ds_envenom_now
+
+    # Maintain Garrote on main target
+    - garrote,if=var.garrote_refreshable&!buff.stealth.up&!buff.vanish.up
+
+    # Deathstalker: apply Garrote to set Deathstalker's Mark if missing
+    - garrote,if=var.use_deathstalker&var.deathstalkers_mark_down&!buff.stealth.up&!buff.vanish.up
+
+    # Maintain Rupture on main target at 5+ CP
+    - rupture,if=var.cp_high&var.rupture_refreshable
+
+    # Crimson Tempest to spread bleeds (Method notes it's reworked as a generator)
+    - crimson_tempest,if=var.cp_high&active_enemies>=2
+
+    # Fan of Knives as AoE builder after bleeds are spread
+    - fan_of_knives,if=!var.cp_max
+
+    # Envenom at 5+ CP
+    - envenom,if=var.cp_high
+
+    # Mutilate as fallback builder
+    - mutilate,if=!var.cp_max&active_enemies<2
