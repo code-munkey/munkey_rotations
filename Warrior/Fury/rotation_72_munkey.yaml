@@ -73,8 +73,8 @@ variables:
   enrage_down: buff.enrage.down
 
   # Improved Whirlwind check for cleave
-  needs_cleave_buff: active_enemies>=config.aoe_threshold&!buff.whirlwind.up
-  cleave_buff_refresh: buff.whirlwind.stacks=0&active_enemies>=config.aoe_threshold
+  needs_cleave_buff: false
+  cleave_buff_refresh: false
 
   # Sudden Death proc management
   sudden_death_high_prio: buff.sudden_death.stack>=2|buff.sudden_death.remains<3
@@ -109,8 +109,8 @@ lists:
     # Route to appropriate profile and target count
     - call_action_list,name=wowhead_st,if=config.rotation_profile=1&active_enemies<config.aoe_threshold
     - call_action_list,name=wowhead_aoe,if=config.rotation_profile=1&active_enemies>=config.aoe_threshold
-    - call_action_list,name=method_st,if=config.rotation_profile=2&active_enemies<config.aoe_threshold
-    - call_action_list,name=method_aoe,if=config.rotation_profile=2&active_enemies>=config.aoe_threshold
+    - call_action_list,name=method_st,if=config.rotation_profile=2
+    #- call_action_list,name=method_aoe,if=config.rotation_profile=2&active_enemies>=config.aoe_threshold
     - call_action_list,name=icyveins_st,if=config.rotation_profile=3&active_enemies<config.aoe_threshold
     - call_action_list,name=icyveins_aoe,if=config.rotation_profile=3&active_enemies>=config.aoe_threshold
 
@@ -276,7 +276,7 @@ lists:
     - bloodthirst,if=!buff.bloodborne.up
 
     # Raging Blow for Surge of Adrenaline management
-    - raging_blow,if=buff.surge_of_adrenaline.down&charges>=2
+    - raging_blow,if=buff.surge_of_adrenaline.down&cooldown.raging_blow.charges>=2
 
     # Execute with Sudden Death
     - execute,if=buff.sudden_death.up
@@ -290,7 +290,7 @@ lists:
     - thunder_blast,override=thunder_clap,if=buff.thunder_blast.up
 
     # Rend
-    - rend,if=!debuff.rend.up
+    - rend,if=!target.debuff.rend.up
 
     # Rampage
     - rampage,if=var.rampage_rage
