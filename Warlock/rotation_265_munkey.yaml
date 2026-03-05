@@ -1,0 +1,49 @@
+version: "1.0.0"
+spec: 265
+name: "Affliction Warlock"
+description: "Waa-waa-wee-waa"
+author: "Antigravity"
+date: "2026-03-05"
+patch: "12.0"
+
+config:
+    aoe_threshold:
+        label: "AoE Treshold"
+        type: slider
+        min: 2
+        max: 8  
+        default: 2
+
+var:
+    is_hellcaller: talent.demonic_soul.enabled
+    is_soul_harvester: talent.wither.enabled
+
+lists:
+    main:
+        - return,if=player.dead|!state.rotation|state.blocked_inputs
+        - call_action_list,name=soul_harvester_st,if=var.is_soul_harvester&combat.enemies=1
+        - call_action_list,name=soul_harvester_aoe,if=var.is_soul_harvester&combat.enemies<1
+    soul_harvester_st:
+        - haunt
+        - agony
+        - corruption
+        - summon_darkglare
+        - malevolence
+        - unstable_affliction
+        - dark_harvest
+        - unstable_affliction
+        - malefic_grasp
+    soul_harvester_aoe:
+        - seed_of_corruption,if=target.debuff.remains(seed_of_corruption)=0
+        - agony,if=target.debuff.stacks(980)=0
+        # Cast haunt and set focus
+        - haunt
+        - focus_target,if=prev_gcd.1.haunt&!focus.exists
+        # Swap to another target if haunt is still up
+        - target_enemy,if=target.debuff.haunt.up|(target.debuff.agony.up&target.debuff.seed_of_corruption.up)
+        - summon_darkglare
+        - dark_harvest
+        - seed_of_corruption
+        - malefic_grasp
+        
+

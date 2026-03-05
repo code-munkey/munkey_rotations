@@ -72,8 +72,8 @@ lists:
         - tentacle_slam,if=active_enemies>1&nameplates.debuff.vampiric_touch.count<active_enemies
         
         # Switch target if current is good but others need DoTs
-        - target_enemy,if=active_enemies>1&nameplates.debuff.vampiric_touch.count<active_enemies&!debuff.vampiric_touch.refreshable
-        - target_enemy,if=active_enemies>1&nameplates.debuff.shadow_word_pain.count<active_enemies&!debuff.shadow_word_pain.refreshable&!talent.misery.enabled
+        #- target_enemy,if=active_enemies>1&nameplates.debuff.vampiric_touch.count<active_enemies&!debuff.vampiric_touch.refreshable
+        #- target_enemy,if=active_enemies>1&nameplates.debuff.shadow_word_pain.count<active_enemies&!debuff.shadow_word_pain.refreshable&!talent.misery.enabled
         
         # 2. Cooldowns
         - mindbender,if=cooldown.mindbender.ready
@@ -110,7 +110,7 @@ lists:
         
         # Spread Logic
         - tentacle_slam,if=active_enemies>1&nameplates.debuff.vampiric_touch.count<active_enemies
-        - target_enemy,if=active_enemies>1&nameplates.debuff.vampiric_touch.count<active_enemies&!debuff.vampiric_touch.refreshable
+        #- target_enemy,if=active_enemies>1&nameplates.debuff.vampiric_touch.count<active_enemies&!debuff.vampiric_touch.refreshable
         
         - halo
         - voidform

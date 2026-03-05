@@ -7,6 +7,7 @@ description: "he Discipline Priest rotation for benevolent control freaks. Featu
 
 morphs:
   smite: void_blast
+  power_word_shield: void_shield
 
 config:
   racial_usage:
@@ -289,14 +290,14 @@ lists:
     - fireblood,if=player.dispelable.elapsed>0.4
     - hyper_organic_light_originator,if=!player.tank&(player.indungeon|!player.inraid)&target.combat&!target.targeting_party
   auto_pi:
-    - power_infusion,cycle=members,if=((cycle.buff.avatar.remains>15)|(cycle.buff.recklessness.remains>8)|((cycle.buff.demonic_art_overlord.up|cycle.buff.demonic_art_mother_of_chaos.up|cycle.buff.demonic_art_pitlord.up)&cycle.buff.malevolence.remains>10)|(cycle.buff.tyrants_oblation.remains>10)|(cycle.buff.malevolence.remains>15)|(cycle.buff.ascendance.remains>10)|(cycle.buff.shadow_blades.remains>12)|(cycle.buff.adrenaline_rush.remains>10)|(cycle.buff.deathmark.remains>10&cycle.buff.kingsbane.remains>10)|(cycle.buff.voidform.remains>15)|(cycle.buff.avenging_wrath.remains>15)|(cycle.buff.courage_of_the_white_tiger.remains>29)|(cycle.buff.combustion.remains>8)|(cycle.buff.arcane_surge.remains>14)|(cycle.buff.takedown.remains>6)|(cycle.buff.trueshot.remains>10)|(cycle.buff.bestial_wrath.remains>10|cycle.buff.bloodshed.remains>10)|(cycle.buff.dragonrage.remains>10)|(cycle.buff.incarnation_avatar_of_ashamane.remains>10|cycle.buff.berserk.remains>10)|(cycle.buff.incarnation_chosen_of_elune.remains>10|cycle.buff.celestial_alignment.remains>10)|(cycle.buff.void_metamorphosis.remains>10)|(cycle.buff.metamorphosis.remains>10)|(cycle.buff.army_of_the_dead.remains>10)|(cycle.buff.pillar_of_frost.remains>10|cycle.buff.breath_of_sindragosa.remains>7)&cycle.buff.power_infusion.down)
+    - power_infusion.focus,cycle=members,if=((cycle.buff.avatar.remains>15)|(cycle.buff.recklessness.remains>8)|((cycle.buff.demonic_art_overlord.up|cycle.buff.demonic_art_mother_of_chaos.up|cycle.buff.demonic_art_pitlord.up)&cycle.buff.malevolence.remains>10)|(cycle.buff.tyrants_oblation.remains>10)|(cycle.buff.malevolence.remains>15)|(cycle.buff.ascendance.remains>10)|(cycle.buff.shadow_blades.remains>12)|(cycle.buff.adrenaline_rush.remains>10)|(cycle.buff.deathmark.remains>10&cycle.buff.kingsbane.remains>10)|(cycle.buff.voidform.remains>15)|(cycle.buff.avenging_wrath.remains>15)|(cycle.buff.courage_of_the_white_tiger.remains>29)|(cycle.buff.combustion.remains>8)|(cycle.buff.arcane_surge.remains>14)|(cycle.buff.takedown.remains>6)|(cycle.buff.trueshot.remains>10)|(cycle.buff.bestial_wrath.remains>10|cycle.buff.bloodshed.remains>10)|(cycle.buff.dragonrage.remains>10)|(cycle.buff.incarnation_avatar_of_ashamane.remains>10|cycle.buff.berserk.remains>10)|(cycle.buff.incarnation_chosen_of_elune.remains>10|cycle.buff.celestial_alignment.remains>10)|(cycle.buff.void_metamorphosis.remains>10)|(cycle.buff.metamorphosis.remains>10)|(cycle.buff.army_of_the_dead.remains>10)|(cycle.buff.pillar_of_frost.remains>10|cycle.buff.breath_of_sindragosa.remains>7)&cycle.buff.power_infusion.down)
   living_silk:
     - trinket_1,if=var.trinket1_living_silk&trinket_1.ready&(config.living_silk_usage=1|var.living_silk_treshold_trigger)
     - trinket_2,if=var.trinket2_living_silk&trinket_2.ready&(config.living_silk_usage=1|var.living_silk_treshold_trigger)
   out_of_combat:
-    - flash_heal,cycle=members,if=var.surge_of_light_procced&cycle.health.pct<=config.OOC_flash_heal_treshold&!player.combat
-    - penance,cycle=members,if=cycle.health.pct<=config.OOC_penance_treshold&!player.combat
-    - flash_heal,cycle=members,if=cycle.health.pct<=config.OOC_flash_heal_treshold&!player.combat
+    - flash_heal.focus,cycle=members,if=var.surge_of_light_procced&cycle.health.pct<=config.OOC_flash_heal_treshold&!player.combat
+    - penance.focus,cycle=members,if=cycle.health.pct<=config.OOC_penance_treshold&!player.combat
+    - flash_heal.focus,cycle=members,if=cycle.health.pct<=config.OOC_flash_heal_treshold&!player.combat
     - power_word_fortitude,range_check=none,if=var.missing_pwf>0&(lastcast.power_word_fortitude<?config.pwf_fallback_time)>config.pwf_fallback_time
   offensive:
     - shadow_word_pain,if=debuff.shadow_word_pain.refreshable
@@ -322,24 +323,24 @@ lists:
     - call_action_list,name=living_silk,if=var.trinket_living_silk
   moving:
     - penance,cycle=members,if=cycle.health.pct<70&!var.hold_penance # Hold penance if less than 2 seconds to two charges for increased Holy Ray healing
-    - power_word_shield,cycle=members,if=cycle.buff.power_word_shield.down&cycle.buff.atonement.down&(var.weal_and_woe_stacks>=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,cycle=members,if=cycle.buff.power_word_shield.down&(var.weal_and_woe_stacks>=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,target=lowest,if=var.weal_and_woe_stacks>=config.weal_and_woe_min_stacks|talent.void_blast
-    - flash_heal,cycle=members,if=cycle.buff.atonement.down&var.surge_of_light_procced
-    - flash_heal,cycle=members,if=var.surge_of_light_procced
+    - power_word_shield.focus,cycle=members,if=cycle.buff.power_word_shield.down&cycle.buff.atonement.down&(var.weal_and_woe_stacks>=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield.focus,cycle=members,if=cycle.buff.power_word_shield.down&(var.weal_and_woe_stacks>=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield.focus,target=lowest,if=var.weal_and_woe_stacks>=config.weal_and_woe_min_stacks|talent.void_blast
+    - flash_heal.focus,cycle=members,if=cycle.buff.atonement.down&var.surge_of_light_procced
+    - flash_heal.focus,cycle=members,if=var.surge_of_light_procced
   pain_suppression_logic:
-    - pain_suppression,name="PS Tanks",cycle=tanks,if=config.pain_suppression_usage!=0&cycle.health.pct<config.pain_suppression_threshold
-    - pain_suppression,name="PS Healers",cycle=healers,if=config.pain_suppression_usage>=2&cycle.health.pct<config.pain_suppression_threshold
-    - pain_suppression,name="PS DPS",cycle=members,if=config.pain_suppression_usage=3&cycle.health.pct<config.pain_suppression_threshold
+    - pain_suppression.focus,name="PS Tanks",cycle=tanks,if=config.pain_suppression_usage!=0&cycle.health.pct<config.pain_suppression_threshold
+    - pain_suppression.focus,name="PS Healers",cycle=healers,if=config.pain_suppression_usage>=2&cycle.health.pct<config.pain_suppression_threshold
+    - pain_suppression.focus,name="PS DPS",cycle=members,if=config.pain_suppression_usage=3&cycle.health.pct<config.pain_suppression_threshold
   atonement_spread:
     - evangelism,name="Evangelism (Spread Atonement)",if=var.missing_atonement>1
     - power_word_radiance,name="PW Radiance (Spread Atonement)",if=var.missing_atonement>1,delay=100
-    - penance,name="Penance (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&cycle.buff.atonement.down
-    - power_word_shield,name="PW Shield (Weak and Woe, not shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&!cycle.buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,name="PW Shield (Weal and Woe, alredy shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
-    - power_word_shield,name="PW Shield (Spread Atonement)",target=lowest,if=cycle.range>0&cycle.range<=40&var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
-    - flash_heal,name="Flash Heal (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.atonement.up&var.surge_of_light_procced
-    - plea,name="Plea (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.atonement.up
+    - penance.focus,name="Penance (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&cycle.buff.atonement.down
+    - power_word_shield.focus,name="PW Shield (Weak and Woe, not shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&!cycle.buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield.focus,name="PW Shield (Weal and Woe, alredy shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
+    - power_word_shield.focus,name="PW Shield (Spread Atonement)",target=lowest,if=cycle.range>0&cycle.range<=40&var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast
+    - flash_heal.focus,name="Flash Heal (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.atonement.up&var.surge_of_light_procced
+    - plea.focus,name="Plea (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.atonement.up
   core:
     # Necessary actions
     - call_action_list,name=sanity_checks
@@ -356,55 +357,9 @@ lists:
     - return,if=!target.valid&config.auto_combat.has(0)   
   dispels:
     - dispel_magic,if=player.dispelable.list
-    - dispel_magic,cycle=members,if=cycle.dispelable.list
+    - dispel_magic.focus,cycle=members,if=cycle.dispelable.list
     - purify,if=player.dispelable.list
-    - purify,cycle=members,if=cycle.dispelable.list
-  mythic_plus:
-    - call_action_list,name=ara_kara
-    - call_action_list,name=floodgate
-  floodgate:
-    ## Trash
-    ## Demolition Duo
-    - purify,cycle=members,if=var.fg_gel_dispel&prev_gcd.1.leap_of_faith&cycle.debuff.kinetic_explosive_gel.up
-    - purify,cycle=members,if=var.fg_gel_dispel&!prev_gcd.1.leap_of_faith&cycle.debuff.kinetic_explosive_gel.elapsed>config.floodgate_auto_gel_delay
-    ## Big MOMMA
-    ## Pull them close if far away
-    - call_action_list,name=floodgate_momma,if=var.fg_momma_protection&target.casting.spell(460156)
-  floodgate_leap:
-    - leap_of_faith,global_delay=300,cycle=members,if=var.fg_leap&config.floodgate_auto_leap_scenarios.has(5)&cycle.debuff.kinetic_explosive_gel.up
-    ## Pull them if nailed in fire
-    - leap_of_faith,cycle=members,if=var.fg_leap&config.floodgate_auto_leap_scenarios.has(1)&leap_ready&cycle.range<=40&cycle.debuff.surveyed_ground.up&cycle.debuff.nailed.up
-    ## Pull them if stnading in saws or flamethrower for too long
-    - leap_of_faith,cycle=members,if=var.fg_leap&config.floodgate_auto_leap_scenarios.has(3)&cycle.range<=40&cycle.debuff.shreddation_sawblade.elapsed>2
-    - leap_of_faith,cycle=members,if=var.fg_leap&config.floodgate_auto_leap_scenarios.has(3)&cycle.range<=40&cycle.debuff.flamethrower.elapsed>2
-    ## Pull them if stunned in electrified water
-    - leap_of_faith,cycle=members,if=var.fg_leap&config.floodgate_auto_leap_scenarios.has(2)&cycle.range<=40&cycle.debuff.shock_water.up&cycle.debuff.leaping_spark.up
-  floodgate_momma:
-    - leap_of_faith,cycle=members,if=var.fg_leap&config.floodgate_auto_leap_scenarios.has(4)&cycle.range>30
-    ## Spread atonement if lacking
-    - call_action_list,name=atonement_spread,if=var.missing_atonement>0
-    ## Put up some shields if available
-    - power_word_shield,cycle=members,if=cooldown.power_word_shield.ready&cycle.range<=30&cycle.range>0&!cycle.buff.power_word_shield.up
-    ## Start casting Ult. Pen. if ppl still low
-    - ultimate_penitence,if=group.count(cycle.health.pct<=50)>=3
-  ara_kara:
-    ## Trash
-    - dispel_magic,cycle=tanks,if=cycle.debuff.tainted_blood.stack>=12|mouseover.exists&mouseover.friendly&mouseover.debuff.tainted_blood.stack>=8
-    ## Avanoxx
-    - ultimate_penitence,name="Pre-emptive penitence",if=var.use_amp&config.ara_kara_avanoxx_features.has(1)&var.avanoxx_damage_incoming&group.count(cycle.health.pct<=50)>=3
-    - power_word_shield,cycle=members,if=var.use_amp&config.ara_kara_avanoxx_features.has(1)&var.avanoxx_damage_incoming&cycle.health.pct<=50&cycle.buff.power_word_shield.down
-    - penance,cycle=members,if=var.use_amp&config.ara_kara_avanoxx_features.has(1)&var.avanoxx_damage_incoming&cycle.health.pct<=50&cycle.buff.power_word_shield.down
-    - leap_of_faith,cycle=dps,if=var.use_amp&config.ara_kara_avanoxx_features.has(2)&cycle.debuff.vile_webbing.stack>3
-    - dispel_magic,cycle=members,if=var.use_amp&config.ara_kara_avanoxx_features.has(3)&cycle.debuff.web_wrap.up
-    ## Anubzekt
-    - leap_of_faith,cycle=dps,if=var.use_amp&config.ara_kara_anubzekt_features.has(1)&target.casting.eye_of_the_swarm&cycle.debuff.ceaseless_swarm.stack>2
-    - leap_of_faith,cycle=members,if=var.use_amp&config.ara_kara_anubzekt_features.has(1)&cycle.debuff.silken_restraints.up
-    - power_word_shield,cycle=dps,if=target.casting.eye_of_the_swarm&cycle.debuff.ceaseless_swarm.stack>2 
-    - penance,cycle=dps,if=target.casting.eye_of_the_swarm&cycle.debuff.ceaseless_swarm.stack>2 
-    ## Ki'katal
-    - leap_of_faith,cycle=members,if=var.use_amp&config.ara_kara_kikatal_features.has(2)&((var.kikatal_erupting_webs_danger&cycle.debuff.grasping_blood.down)|(var.kikatal_cosmic_singularity_danger&cycle.debuff.grasping_blood.down&cycle.buff.deaths_advance.down&cycle.buff.))
-    - pain_suppression,cycle=members,if=var.use_amp&config.ara_kara_kikatal_features.has(3)&var.kikatal_erupting_webs_danger&cycle.debuff.grasping_blood.up
-    - power_word_shield,cycle=members,if=var.use_amp&config.ara_kara_kikatal_features.has(1)&var.kikatal_erupting_webs_danger&cycle.debuff.grasping_blood.up
+    - purify.focus,cycle=members,if=cycle.dispelable.list
   main:
     - return,if=mounted|!state.rotation
     - call_action_list,name=out_of_combat,if=!player.combat
@@ -417,7 +372,6 @@ lists:
     - call_action_list,name=racials
     - call_action_list,name=dispels
     - call_action_list,name=auto_pi,if=config.cd_aware_pi=3|(config.cd_aware_pi=2&boss_fight)
-    - call_action_list,name=mythic_plus,if=player.in_mythic_plus&var.use_amp
     - call_action_list,name=pain_suppression_logic
     - call_action_list,name=moving,if=player.moving
     - call_action_list,name=high_prio

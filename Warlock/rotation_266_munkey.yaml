@@ -1,0 +1,257 @@
+# ============================================================================
+# METADATA HEADER (Required)
+# ============================================================================
+version: "1.0.1"
+spec: 266
+name: "Demonology Warlock"
+description: "Wowhead, Icy Veins, Method.gg profiles with Diabolist plus Soul Harvester support"
+author: "Antigravity"
+date: "2026-03-05"
+patch: "11.1"
+
+# ----------------------------------------------------------------------------
+# ROOT LEVEL: Movement handling
+# ----------------------------------------------------------------------------
+# For casters with mobility spells: Demonology Warlock can cast Demonbolt instantly with Demonic Core
+movement_allowed: buff.demonic_core.up
+
+# ----------------------------------------------------------------------------
+# CONFIG: User settings UI
+# ----------------------------------------------------------------------------
+config:
+  rotation_profile:
+    type: dropdown
+    options:
+      - label: "Wowhead"
+        value: wowhead
+      - label: "Icy Veins"
+        value: icyveins
+      - label: "Method"
+        value: method
+    default: 0
+
+  aoe_threshold:
+    type: slider
+    min: 2
+    max: 8
+    default: 2
+
+  use_defensives:
+    type: checkbox
+    value: true
+
+  hero_talent_mode:
+    type: dropdown
+    options:
+      - label: "Auto (Detect)"
+        value: auto
+      - label: "Diabolist"
+        value: diabolist
+      - label: "Soul Harvester"
+        value: soul_harvester
+    default: 0
+
+# ----------------------------------------------------------------------------
+# VARIABLES: Reusable expressions
+# ----------------------------------------------------------------------------
+variables:
+  # Hero talent detection
+  is_diabolist: talent.diabolic_ritual.enabled
+  is_soul_harvester: talent.demonic_soul.enabled
+
+  # Hero talent selection (config override or auto-detect)
+  use_diabolist: (config.hero_talent_mode=auto&var.is_diabolist)|(config.hero_talent_mode=diabolist)
+  use_soul_harvester: (config.hero_talent_mode=auto&var.is_soul_harvester)|(config.hero_talent_mode=soul_harvester)
+
+  # Profile selection variables
+  use_wowhead: config.rotation_profile=wowhead
+  use_icyveins: config.rotation_profile=icyveins
+  use_method: config.rotation_profile=method
+
+  # AOE detection
+  use_aoe: active_enemies>=config.aoe_threshold
+
+  # Core logic conditions
+  high_shards: soul_shard>=3
+  cap_shards: soul_shard>=5
+  has_core: buff.demonic_core.up
+  core_stack_low: buff.demonic_core.stack<=2
+
+# ----------------------------------------------------------------------------
+# LISTS: Action lists
+# ----------------------------------------------------------------------------
+lists:
+  # ========================================================================
+  # MAIN ENTRY POINT (Auto-executed - NO explicit call needed!)
+  # ========================================================================
+  main:
+    # Sanity checks
+    - return,if=player.dead|!state.rotation|state.blocked_inputs
+    - 30146,if=buff.hellbent_commander.down
+    - return,if=!player.combat|!target.combat
+
+    # Defensive handling
+    - call_action_list,name=defensives,if=config.use_defensives
+
+    # Cooldown management
+    - call_action_list,name=cooldowns
+
+    # Profile routing - Wowhead
+    - call_action_list,name=wowhead_st,if=var.use_wowhead&!var.use_aoe
+    - call_action_list,name=wowhead_aoe,if=var.use_wowhead&var.use_aoe
+
+    # Profile routing - Icy Veins
+    - call_action_list,name=icyveins_st,if=var.use_icyveins&!var.use_aoe
+    - call_action_list,name=icyveins_aoe,if=var.use_icyveins&var.use_aoe
+
+    # Profile routing - Method
+    - call_action_list,name=method_st,if=var.use_method&!var.use_aoe
+    - call_action_list,name=method_aoe,if=var.use_method&var.use_aoe
+
+  # ========================================================================
+  # DEFENSIVES (Shared across all profiles)
+  # ========================================================================
+  defensives:
+    - unending_resolve,if=health.pct<30
+    - dark_pact,if=health.pct<50
+    - healthstone,if=health.pct<25
+
+  # ========================================================================
+  # COOLDOWNS (Shared across all profiles)
+  # ========================================================================
+  cooldowns:
+    - trinket_1,if=trinket_1.sync
+    - trinket_2,if=trinket_2.sync
+
+  # ========================================================================
+  # WOWHEAD - SINGLE TARGET
+  # Based on: Wowhead Demonology Warlock Guide (11.0.5 / 11.1)
+  # Focus: Optimizing Soul Shards, Demonic Cores, and Tyrant windows.
+  # ========================================================================
+  wowhead_st:
+    # Opener & major demons setup
+    - power_siphon,if=var.core_stack_low
+    - call_dreadstalkers
+    - grimoire_felguard
+    - summon_vilefiend
+
+    # Demonic Tyrant sync ensuring major demons are cast first
+    - summon_demonic_tyrant
+
+    # Spend Shards at cap before generating more
+    - hand_of_guldan,if=var.cap_shards
+    
+    # High Priority Hero Talent Spells
+    - ruination,if=var.use_diabolist
+
+    # Core generation vs Spending
+    - demonbolt,if=var.has_core
+    - hand_of_guldan,if=var.high_shards
+    - shadow_bolt
+
+  # ========================================================================
+  # WOWHEAD - AOE
+  # Focus: Maintaining Doom and Implosions on multi-target
+  # ========================================================================
+  wowhead_aoe:
+    - power_siphon,if=var.core_stack_low
+    - call_dreadstalkers
+    - grimoire_fel_ravager
+    - summon_vilefiend
+    
+    # Demonic Tyrant sync
+    - summon_demonic_tyrant
+    
+    # High Priority Hero Talent Spells
+    - ruination,if=var.use_diabolist
+
+    # Implosion with active grouped imps (simplified logic: delay after dreadstalkers)
+    - implosion,if=active_enemies>=config.aoe_threshold
+
+    # Spend Shards and Cores
+    - hand_of_guldan,if=var.cap_shards
+    - demonbolt,if=var.has_core
+    - hand_of_guldan,if=var.high_shards
+    - shadow_bolt
+
+  # ========================================================================
+  # ICY VEINS - SINGLE TARGET
+  # Based on: Icy Veins Demonology DPS Guide (11.0.5 / 11.1)
+  # Focus: High emphasis on Tyrant extensions and avoiding capping.
+  # ========================================================================
+  icyveins_st:
+    - power_siphon,if=var.core_stack_low
+    - call_dreadstalkers
+    - grimoire_felguard
+    - summon_vilefiend
+    
+    - summon_demonic_tyrant
+    
+    - ruination,if=var.use_diabolist
+    
+    - hand_of_guldan,if=var.cap_shards
+    - demonbolt,if=var.has_core
+    - hand_of_guldan,if=var.high_shards
+    - shadow_bolt
+
+  # ========================================================================
+  # ICY VEINS - AOE
+  # Focus: Implosion when having 6+ Wild Imps
+  # ========================================================================
+  icyveins_aoe:
+    - power_siphon,if=var.core_stack_low
+    - call_dreadstalkers
+    - grimoire_felguard
+    - summon_vilefiend
+    
+    - summon_demonic_tyrant
+    
+    - ruination,if=var.use_diabolist
+
+    - implosion,if=active_enemies>=config.aoe_threshold
+
+    - hand_of_guldan,if=var.cap_shards
+    - demonbolt,if=var.has_core
+    - hand_of_guldan,if=var.high_shards
+    - shadow_bolt
+
+  # ========================================================================
+  # METHOD - SINGLE TARGET
+  # Based on: Method.gg Demonology Warlock Guide (11.0.5 / 11.1)
+  # Focus: Careful resource pooling and avoiding demonic core over-cap.
+  # ========================================================================
+  method_st:
+    - power_siphon,if=var.core_stack_low
+    - grimoire_felguard
+    - summon_vilefiend
+    - call_dreadstalkers
+    
+    - summon_demonic_tyrant
+    
+    - ruination,if=var.use_diabolist
+    
+    - hand_of_guldan,if=var.cap_shards
+    - demonbolt,if=var.has_core
+    - hand_of_guldan,if=var.high_shards
+    - shadow_bolt
+
+  # ========================================================================
+  # METHOD - AOE
+  # Focus: Manual Doom spread tracking via auto cycle targets if possible.
+  # ========================================================================
+  method_aoe:
+    - power_siphon,if=var.core_stack_low
+    - grimoire_felguard
+    - summon_vilefiend
+    - call_dreadstalkers
+    
+    - summon_demonic_tyrant
+    
+    - ruination,if=var.use_diabolist
+
+    - implosion,if=active_enemies>=config.aoe_threshold
+
+    - hand_of_guldan,if=var.cap_shards
+    - demonbolt,if=var.has_core
+    - hand_of_guldan,if=var.high_shards
+    - shadow_bolt
