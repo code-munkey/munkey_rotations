@@ -29,6 +29,8 @@ config:
         value: 2
       - label: "Crippling"
         value: 3
+      - label: "Numbing"
+        value: 4
     default: 1
   auto_stealth:
     label: "Auto-stealth"
@@ -96,7 +98,7 @@ variables:
   opportunity_stacks: buff.opportunity.stack
   stealth_up: buff.stealth.up|buff.vanish.up|buff.shadow_dance.up
   mh_poison_up: (config.mh_poison=1|config.mh_poison=2&buff.instant_poison.up|config.mh_poison=3&buff.wound_poison.up)
-  oh_poison_up: (config.mh_poison=1|config.mh_poison=2&buff.atrophic_poison.up|config.mh_poison=3&buff.crippling_poison.up)
+  oh_poison_up: (config.oh_poison=1|config.oh_poison=2&buff.atrophic_poison.up|config.oh_poison=3&buff.crippling_poison.up|config.oh_poison=4&buff.numbing_poison.up)
 
   # Defensive
   hp_low: health.pct<config.crimson_vial_pct
@@ -120,10 +122,11 @@ lists:
     - call_action_list,name=defensives
     - call_action_list,name=auto_dispel,if=config.auto_target
     - call_action_list,name=auto_freedom
-    - instant_poison,range_check=none,if=pred.buff.instant_poison.down&config.mh_poison=2
-    - wound_poison,range_check=none,if=pred.buff.wound_poison.down&config.mh_poison=3
-    - atrophic_poison,range_check=none,if=pred.buff.atrophic_poison.down&config.oh_poison=2
-    - crippling_poison,range_check=none,if=pred.buff.crippling_poison.down&config.oh_poison=3
+    - instant_poison,range_check=none,if=!pred.buff.instant_poison.up&config.mh_poison=2
+    - wound_poison,range_check=none,if=!pred.buff.wound_poison.up&config.mh_poison=3
+    - atrophic_poison,range_check=none,if=!pred.buff.atrophic_poison.up&config.oh_poison=2
+    - crippling_poison,range_check=none,if=!pred.buff.crippling_poison.up&config.oh_poison=3
+    - numbing_poison,range_check=none,if=!pred.buff.numbing_poison.up&config.oh_poison=4
     - call_action_list,name=defensives,if=config.auto_defensives&player.combat
     - stealth,range_check=none,if=!player.combat&!var.stealth_up&config.auto_stealth
     - call_action_list,name=cds
