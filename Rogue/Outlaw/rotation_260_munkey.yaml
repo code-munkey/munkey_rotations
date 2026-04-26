@@ -40,18 +40,11 @@ config:
     label: "Auto-target"
     type: checkbox
     default: true
-  rtb_reroll_threshold:
-    label: "RtB Reroll Threshold"
-    type: slider
-    min: 1
-    max: 3
-    default: 2
-    description: "Reroll RtB if at or below this many buffs"
   kir_min_buffs:
     label: "Keep It Rolling Min Buffs"
     type: slider
     min: 3
-    max: 6
+    max: 4
     default: 3
     description: "Min buffs to use Keep It Rolling"
   finisher_cp:
@@ -141,10 +134,10 @@ lists:
 
   cds:
     - adrenaline_rush,if=!buff.adrenaline_rush.up&(!var.finish_condition|!talent.improved_adrenaline_rush)&combo_points<=2
-    - blade_flurry,if=spell_targets>=2&buff.blade_flurry.remains<gcd
+    - blade_flurry,if=enemies.combat.8y>=2&buff.blade_flurry.remains<gcd
     - preparation,if=cooldown.adrenaline_rush.remains>30&!cooldown.between_the_eyes.ready|fight_remains<30
-    - keep_it_rolling,if=var.rtb_buff_count>=3
-    - roll_the_bones,if=!buff.roll_the_bones.up|var.rtb_buff_count=1+(buff.loaded_dice.up&cooldown.between_the_eyes.ready)
+    - keep_it_rolling,if=var.rtb_buff_count>=config.kir_min_buffs
+    - roll_the_bones,if=var.rtb_buff_count<=1+(buff.loaded_dice.up&cooldown.between_the_eyes.ready)
     - blade_rush
     - vanish,if=!variable.finish_condition&talent.hidden_opportunity&!buff.audacity.up&!buff.opportunity.up
     - shadowmeld,if=!variable.finish_condition&talent.hidden_opportunity&!buff.audacity.up&!buff.opportunity.up
