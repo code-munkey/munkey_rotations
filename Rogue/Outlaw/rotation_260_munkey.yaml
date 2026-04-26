@@ -104,7 +104,8 @@ lists:
   interrupts:
     - kick,if=interrupt.target.check
     - kick.focus,if=interrupt.focus.check
-    - blind,if=interrupt.target.check&!cooldown.kick.ready
+    - kidney_shot,if=inerrupt.focus.check&combo_points>0
+    - blind,if=interrupt.target.check
     - kick.mouseover,if=interrupt.mouseover.check
   main:
     - stop_casting,interrupt=true,if=var.stop_casting
