@@ -95,7 +95,6 @@ variables:
 
   # Defensive
   hp_low: health.pct<config.crimson_vial_pct
-  ambush_condition: (talent.hidden_opportunity.enabled|combo_points.deficit>=2+talent.improved_ambush)&energy>=50
   finish_condition: combo_points>=combo_points.max-1-(1*(!cooldown.between_the_eyes.ready)&((talent.hand_of_fate.enabled)|(cooldown.killing_spree.ready)))
   stop_casting: player.channeling&energy.time_to_max<gcd*1.5
 
@@ -125,8 +124,8 @@ lists:
     - numbing_poison,range_check=none,if=!pred.buff.numbing_poison.up&config.oh_poison=4
     - call_action_list,name=defensives,if=config.auto_defensives&player.combat
     - stealth,range_check=none,if=!player.combat&!var.stealth_up&config.auto_stealth
-    - return,if=!player.combat
-    - target_enemy,if=target.dead|!target.attackable|!target.combat
+    - return,if=!target.combat|target.range>15
+    - target_enemy,if=target.dead|!target.attackable|!target.combat|(target.range>15&player.combat)
     - call_action_list,name=cds
     - run_action_list,name=finisher,if=var.finish_condition
     - call_action_list,name=build
@@ -155,7 +154,7 @@ lists:
     - trinket_2,if=trinket_2.sync
 
   build:
-    - ambush,if=var.ambush_condition&buff.audacity.up
+    - ambush,if=talent.hidden_opportunity&buff.audacity.up
     - blade_flurry,if=talent.deft_maneuvers&enemies.combat.8y>=3
     - coup_de_grace,if=buff.disorienting_strikes.up
     - pistol_shot,if=talent.audacity&talent.hidden_opportunity&buff.opportunity.up&!buff.audacity.up
@@ -163,7 +162,7 @@ lists:
     - pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&(combo_points.deficit>=(1+talent.quick_draw+(talent.quick_draw*talent.fan_the_hammer.rank))&(combo_points>1|var.rtb_buff_count<2|!talent.deal_fate))
     - pistol_shot,if=!talent.fan_the_hammer&buff.opportunity.up&(energy.base_deficit>energy.regen*1.5|combo_points.deficit<=1|talent.quick_draw.enabled|talent.audacity.enabled&!buff.audacity.up)
     - pool_resource,if=talent.hidden_opportunity,for_next=1
-    - ambush,if=var.ambush_condition
+    - ambush,if=talent.hidden_opportunity
     - sinister_strike
   defensives:
     - feint,if=!buff.feint.up
