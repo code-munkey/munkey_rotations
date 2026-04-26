@@ -1,0 +1,171 @@
+version: 1.0
+author: munkey
+blocked: false
+spec: 260
+name: "Roll the dice (M+)"
+description: "Outlaw Rogue rotation based on multiple sources and logs."
+
+movement_allowed: true
+
+config:
+  mh_poison:
+    label: "Lethal posion"
+    type: dropdown
+    options:
+      - label: "None"
+        value: 1
+      - label: "Instant"
+        value: 2
+      - label: "Wound"
+        value: 3
+    default: 1
+  oh_poison:
+    label: "Non-lethal posion"
+    type: dropdown
+    options:
+      - label: "None"
+        value: 1
+      - label: "Atrophic"
+        value: 2
+      - label: "Crippling"
+        value: 3
+    default: 1
+  auto_stealth:
+    label: "Auto-stealth"
+    type: checkbox
+    default: true
+  auto_target:
+    label: "Auto-target"
+    type: checkbox
+    default: true
+  rtb_reroll_threshold:
+    label: "RtB Reroll Threshold"
+    type: slider
+    min: 1
+    max: 3
+    default: 2
+    description: "Reroll RtB if at or below this many buffs"
+  kir_min_buffs:
+    label: "Keep It Rolling Min Buffs"
+    type: slider
+    min: 3
+    max: 6
+    default: 3
+    description: "Min buffs to use Keep It Rolling"
+  finisher_cp:
+    label: "Finisher CP"
+    type: slider
+    min: 5
+    max: 6
+    default: 6
+    description: "CP for Between the Eyes"
+  dispatch_cp:
+    label: "Dispatch CP"
+    type: slider
+    min: 5
+    max: 6
+    default: 5
+    description: "CP for Dispatch"
+  auto_defensives:
+    label: "Auto Defensives"
+    type: checkbox
+    default: true
+  crimson_vial_pct:
+    label: "Crimson Vial HP %"
+    type: slider
+    min: 10
+    max: 90
+    default: 50
+
+variables:
+  # Target
+  target_attackable: target.exists&target.enemy&target.alive&target.range<=8
+  enemies_melee: enemies.8y
+
+  # Combo Points
+  cp_max: combo_points>=combo_points.max
+  cp_bte: combo_points>=config.finisher_cp
+  cp_dispatch: combo_points>=config.dispatch_cp
+  cp_ar: combo_points<=2
+  cp_builder: combo_points<=5
+  cp_pistol_1_3: combo_points>=1&combo_points<=3
+
+  # Buffs/Stats
+  rtb_buff_count: ((1*buff.one_of_a_kind.up)+(2*buff.double_trouble.up)+(3*buff.triple_threat.up)+(4*buff.jackpot.up))
+  blade_flurry_up: buff.blade_flurry.up
+  opportunity_stacks: buff.opportunity.stack
+  stealth_up: buff.stealth.up|buff.vanish.up|buff.shadow_dance.up
+  mh_poison_up: (config.mh_poison=1|config.mh_poison=2&buff.instant_poison.up|config.mh_poison=3&buff.wound_poison.up)
+  oh_poison_up: (config.mh_poison=1|config.mh_poison=2&buff.atrophic_poison.up|config.mh_poison=3&buff.crippling_poison.up)
+
+  # Defensive
+  hp_low: health.pct<config.crimson_vial_pct
+  ambush_condition: (talent.hidden_opportunity.enabled|combo_points.deficit>=2+talent.improved_ambush)&energy>=50
+  finish_condition: combo_points>=combo_points.max-1-(1*(!cooldown.between_the_eyes.ready)&((talent.hand_of_fate.enabled)|(cooldown.killing_spree.ready)))
+  stop_casting: player.casting.killing_spree&energy.time_to_max<2
+
+lists:
+
+  interrupts:
+    - kick,if=interrupt.target.check
+    - kick.mouseover,if=interrupt.mouseover.check
+  main:
+    - stop_casting,interrupt=true,if=var.stop_casting
+    - call_action_list,name=spell_queue
+    - call_action_list,name=sanity_checks
+    - call_action_list,name=auto_heal
+    - call_action_list,name=auto_target
+    - call_action_list,name=precombat
+    - call_action_list,name=interrupts
+    - call_action_list,name=defensives
+    - call_action_list,name=auto_dispel,if=config.auto_target
+    - call_action_list,name=auto_freedom
+    - instant_poison,range_check=none,if=pred.buff.instant_poison.down&config.mh_poison=2
+    - wound_poison,range_check=none,if=pred.buff.wound_poison.down&config.mh_poison=3
+    - atrophic_poison,range_check=none,if=pred.buff.atrophic_poison.down&config.oh_poison=2
+    - crippling_poison,range_check=none,if=pred.buff.crippling_poison.down&config.oh_poison=3
+    - call_action_list,name=defensives,if=config.auto_defensives&player.combat
+    - stealth,range_check=none,if=!player.combat&!var.stealth_up&config.auto_stealth
+    - call_action_list,name=cds
+    - run_action_list,name=finisher,if=var.finish_condition
+    - call_action_list,name=build
+
+  finisher:
+    - between_the_eyes,if=cooldown.adrenaline_rush.remains>30|buff.adrenaline_rush.up|!talent.supercharger|!talent.zero_in
+    - killing_spree
+    - coup_de_grace
+    - dispatch
+
+  cds:
+    - adrenaline_rush,if=!buff.adrenaline_rush.up&(!var.finish_condition|!talent.improved_adrenaline_rush)&combo_points<=2
+    - blade_flurry,if=spell_targets>=2&buff.blade_flurry.remains<gcd
+    - preparation,if=cooldown.adrenaline_rush.remains>30&!cooldown.between_the_eyes.ready|fight_remains<30
+    - keep_it_rolling,if=var.rtb_buff_count>=3
+    - roll_the_bones,if=!buff.roll_the_bones.up|var.rtb_buff_count=1+(buff.loaded_dice.up&cooldown.between_the_eyes.ready)
+    - blade_rush
+    - vanish,if=!variable.finish_condition&talent.hidden_opportunity&!buff.audacity.up&!buff.opportunity.up
+    - shadowmeld,if=!variable.finish_condition&talent.hidden_opportunity&!buff.audacity.up&!buff.opportunity.up
+    - potion,if=buff.bloodlust.react|fight_remains<30|buff.adrenaline_rush.up
+    - blood_fury
+    - berserking
+    - fireblood
+    - ancestral_call
+    - trinket_1,if=trinket_1.sync
+    - trinket_2,if=trinket_2.sync
+
+  build:
+    - ambush,if=talent.hidden_opportunity&buff.audacity.up
+    - blade_flurry,if=talent.deft_maneuvers&enemies.combat.8y>=3
+    - coup_de_grace,if=buff.disorienting_strikes.up
+    - pistol_shot,if=talent.audacity&talent.hidden_opportunity&buff.opportunity.up&!buff.audacity.up
+    - pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&(buff.opportunity.stack>=6|buff.opportunity.remains<2)
+    - pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&(combo_points.deficit>=(1+talent.quick_draw+(talent.quick_draw*talent.fan_the_hammer.rank))&(combo_points>1|var.rtb_buff_count<2|!talent.deal_fate))
+    - pistol_shot,if=!talent.fan_the_hammer&buff.opportunity.up&(energy.base_deficit>energy.regen*1.5|combo_points.deficit<=1|talent.quick_draw.enabled|talent.audacity.enabled&!buff.audacity.up)
+    - pool_resource,if=talent.hidden_opportunity,for_next=1
+    - ambush,if=talent.hidden_opportunity
+    - sinister_strike
+  defensives:
+    - feint,if=!buff.feint.up
+    - cloak_of_shadows,if=player.has_magic_debuff
+    - evasion,if=health.pct<30
+    - crimson_vial,if=var.hp_low

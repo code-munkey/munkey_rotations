@@ -1,0 +1,203 @@
+# ============================================================================
+# FROST DEATH KNIGHT ROTATION
+# ============================================================================
+# Deathbringer focused, with Breath of Sindragosa / Shattering Blade detection
+# Patch: 12.0 (Midnight)
+# ============================================================================
+
+version: 1.0
+author: munkey
+spec: 251
+name: "Frost DK"
+description: "Frost Death Knight rotation for Deathbringer with Breath/Shattering Blade build detection"
+
+# Frost DK is melee — all core abilities are instant
+movement_allowed: true
+
+# ----------------------------------------------------------------------------
+# CONFIG
+# ----------------------------------------------------------------------------
+config:
+  aoe_threshold:
+    label: "AoE Threshold"
+    type: slider
+    min: 2
+    max: 8
+    default: 3
+
+# ----------------------------------------------------------------------------
+# VARIABLES
+# ----------------------------------------------------------------------------
+variables:
+  # Build detection
+  is_breath: talent.breath_of_sindragosa
+  is_shattering: talent.shattering_blade
+
+  # AoE toggle (respects state.aoe override)
+  is_aoe: state.aoe&active_enemies>=config.aoe_threshold
+
+  # Buff shortcuts
+  pillar_active: buff.pillar_of_frost.up
+  breath_active: buff.breath_of_sindragosa.up
+
+  # Killing Machine
+  km_2: buff.killing_machine.stack>=2
+  km_up: buff.killing_machine.up
+
+  # Resource thresholds
+  high_rp: runic_power>=75
+  low_runes: rune<=1
+  rime_up: buff.rime.up
+
+# ----------------------------------------------------------------------------
+# ACTION LISTS
+# ----------------------------------------------------------------------------
+lists:
+  # ========================================================================
+  # MAIN — auto-executed entry point
+  # ========================================================================
+  main:
+    - return,if=!state.rotation
+    - call_action_list,name=sanity_checks
+    - call_action_list,name=spell_queue
+    - call_action_list,name=auto_target
+    - return,if=!player.combat
+    - return,if=player.channeling
+
+    # Interrupts
+    - call_action_list,name=interrupts
+
+    # Defensives
+    - call_action_list,name=defensives
+
+    # Cooldowns
+    - call_action_list,name=cooldowns
+
+    # Rotation dispatch
+    - call_action_list,name=aoe,if=var.is_aoe
+    - call_action_list,name=st
+
+  # ========================================================================
+  # INTERRUPTS
+  # ========================================================================
+  interrupts:
+    - mind_freeze,if=interrupts.target.ready
+    - mind_freeze.mouseover,if=interrupts.mouseover.ready
+
+  # ========================================================================
+  # DEFENSIVES
+  # ========================================================================
+  defensives:
+    - icebound_fortitude,if=health.pct<35|player.stunned
+    - death_strike,if=health.pct<50
+    - death_pact,if=health.pct<20
+    - lichborne,if=health.pct<30
+
+  # ========================================================================
+  # COOLDOWNS
+  # ========================================================================
+  cooldowns:
+    # --- Pillar of Frost ---
+    # Breath builds: gate behind 60 RP so we can Breath immediately after
+    - pillar_of_frost,if=state.cds&var.is_breath&runic_power>=60
+    # Non-Breath builds: use on cooldown
+    - pillar_of_frost,if=state.cds&!var.is_breath
+
+    # --- Frostwyrm's Fury (Deathbringer Recall logic) ---
+    # Cast during Pillar when Exterminate is NOT active.
+    #   First cast:  Pillar just started, no Exterminate yet → fires immediately.
+    #   Recall cast:  After Reaper's Mark explodes and Exterminate charges are
+    #                 spent (buff.exterminate.down), FWF fires again as Recall.
+    - frostwyrms_fury,if=state.cds&var.pillar_active&buff.exterminate.down
+
+    # --- Empower Rune Weapon (off-GCD) ---
+    # Prevent charge overcap
+    - empower_rune_weapon,if=cooldown.empower_rune_weapon.charges>=2
+    # Fuel Breath of Sindragosa opener (need 60 RP)
+    - empower_rune_weapon,if=var.is_breath&cooldown.breath_of_sindragosa.ready&runic_power<60
+
+    # --- Breath of Sindragosa ---
+    - breath_of_sindragosa,if=state.cds&var.is_breath&var.pillar_active
+
+    # --- Trinkets (sync with Pillar) ---
+    - trinket_1,if=state.cds&trinket_1.usable&trinket_1.ready&var.pillar_active
+    - trinket_2,if=state.cds&trinket_2.usable&trinket_2.ready&var.pillar_active
+
+    # --- Reaper's Mark ---
+    # During Pillar window, or on CD if Pillar is far away
+    - reapers_mark,if=state.cds&(var.pillar_active|cooldown.pillar_of_frost.remains>10)
+
+    # --- Remorseless Winter ---
+    # Manual cast when Frozen Dominion is not talented
+    - remorseless_winter,if=!talent.frozen_dominion
+
+    # --- Raise Dead ---
+    - raise_dead
+
+  # ========================================================================
+  # SINGLE TARGET PRIORITY
+  # ========================================================================
+  # Based on st.txt "General Single Target Priority List"
+  # (Cooldowns 1-6 handled above)
+  # ========================================================================
+  st:
+    # 1. Spend Exterminate charges from Reaper's Mark (Deathbringer)
+    - obliterate,if=buff.exterminate.up
+
+    # 2. Killing Machine at 2 stacks — prevent overcap
+    - obliterate,if=var.km_2
+
+    # 3. Frost Strike when rune-starved OR consuming 5 Razorice (Shattering Blade)
+    - frost_strike,if=var.low_runes|(debuff.razorice.stack>=5&var.is_shattering)
+
+    # 4. Consume Killing Machine
+    - obliterate,if=var.km_up
+
+    # 5. Rime proc → Howling Blast
+    - howling_blast,if=var.rime_up
+
+    # 6. Frost Strike at high RP or during Pillar window
+    - frost_strike,if=var.high_rp|var.pillar_active
+
+    # 7. Emergency Empower Rune Weapon at low RP
+    - empower_rune_weapon,if=runic_power<35
+
+    # 8. Obliterate filler
+    - obliterate
+
+    # 9. Frost Strike dump
+    - frost_strike
+
+    # 10. Raise Dead (fallback)
+    - raise_dead
+
+  # ========================================================================
+  # AOE PRIORITY (3+ Targets)
+  # ========================================================================
+  # Based on aoe.txt "General Multi-Target Priority List"
+  # (Cooldowns 1-6 handled above)
+  # ========================================================================
+  aoe:
+    # 1. Frost Strike when Frostbane is active (highest AoE priority)
+    - frost_strike,if=buff.frostbane.up
+
+    # 2. Spend Exterminate charges (Deathbringer)
+    - obliterate,if=buff.exterminate.up
+
+    # 3. Frostscythe with Killing Machine
+    - frostscythe,if=var.km_up
+
+    # 4. Rime proc → Howling Blast
+    - howling_blast,if=var.rime_up
+
+    # 5. Glacial Advance at high RP or during Pillar
+    - glacial_advance,if=var.high_rp|var.pillar_active
+
+    # 6. Frostscythe filler
+    - frostscythe
+
+    # 7. Frost Strike dump
+    - frost_strike
+
+    # 8. Raise Dead (fallback)
+    - raise_dead

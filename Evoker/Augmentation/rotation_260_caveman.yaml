@@ -1,0 +1,89 @@
+version: 1
+author: munkey
+blocked: true
+class: evoker
+spec: augmentation
+name: Augmentation Method M+
+description: Augmented Evoker rotation based on Method.gg strategy
+entry: main
+
+movement_allowed: true
+
+config:
+  use_potions:
+    label: "Auto Potions"
+    type: checkbox
+    default: true
+    description: "Use Combat Potions during burst"
+  auto_defensives:
+    label: "Auto Defensives"
+    type: checkbox
+    default: true
+    description: "Automatically use defensives like Obsidian Scales"
+
+variables:
+  target_valid: target.exists&target.enemy&target.alive
+  target_attackable: var.target_valid&!target.immune
+
+  # Buffs
+  prescience_up: buff.prescience.up
+  ebon_might_up: buff.ebon_might.up
+  ebon_might_remains: buff.ebon_might.remains
+  blistering_scales_up: buff.blistering_scales.up
+
+  # CD ready
+  ebon_might_ready: cooldown.ebon_might.ready
+  breath_of_eons_ready: cooldown.breath_of_eons.ready
+  fire_breath_ready: cooldown.fire_breath.ready
+  upheaval_ready: cooldown.upheaval.ready
+  tip_the_scales_ready: cooldown.tip_the_scales.ready
+  time_skip_ready: cooldown.time_skip.ready
+  blistering_scales_ready: cooldown.blistering_scales.ready
+  eruption_ready: cooldown.eruption.ready
+  prescience_ready: cooldown.prescience.ready
+  
+  # Essences
+  essence_high: essence>=3
+
+  health_critical: health.pct<30
+
+lists:
+  main:
+    - return,if=!state.rotation|player.mounted
+    
+    - call_action_list,name=defensives,if=config.auto_defensives
+    
+    - call_action_list,name=precombat,if=!player.combat
+    - call_action_list,name=opener,if=player.combat.time<15
+    - call_action_list,name=cooldowns,if=var.target_attackable
+    - call_action_list,name=rotation,if=var.target_attackable
+
+  precombat:
+    - blistering_scales,if=var.blistering_scales_ready&!var.blistering_scales_up
+    - living_flame,if=!player.moving
+
+  opener:
+    - prescience,if=var.prescience_ready
+    - ebon_might,if=var.ebon_might_ready
+    - breath_of_eons,if=var.breath_of_eons_ready
+    - health_potion,if=config.use_potions
+    - tip_the_scales,if=var.tip_the_scales_ready
+    - fire_breath,if=var.fire_breath_ready,empower_to=1
+    - upheaval,if=var.upheaval_ready,empower_to=1
+    - time_skip,if=var.time_skip_ready
+    - eruption,if=var.eruption_ready
+
+  cooldowns:
+    - breath_of_eons,if=var.breath_of_eons_ready
+
+  rotation:
+    - prescience,if=var.prescience_ready
+    - ebon_might,if=var.ebon_might_ready&var.ebon_might_remains<=4
+    - fire_breath,if=var.fire_breath_ready&var.ebon_might_up,empower_to=1
+    - upheaval,if=var.upheaval_ready&var.ebon_might_up,empower_to=1
+    - eruption,if=var.eruption_ready&var.ebon_might_up
+    - living_flame
+
+  defensives:
+    - obsidian_scales,if=var.health_critical&cooldown.obsidian_scales.ready&!buff.obsidian_scales.up
+    - renewing_blaze,if=var.health_critical&cooldown.renewing_blaze.ready

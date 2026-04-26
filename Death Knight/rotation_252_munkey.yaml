@@ -37,7 +37,6 @@ lists:
 
   main:
     - return,if=!state.rotation
-    - augment_rune,if=buff.ethereal_augmentation.remains<300
     - call_action_list,name=sanity_checks
     - call_action_list,name=spell_queue
     - call_action_list,name=auto_target

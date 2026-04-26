@@ -102,7 +102,7 @@ config:
   MO_pain_suppression:
     label: Use PS on MO
     type: checkbox
-    default: true 
+    default: true
   MO_penance:
     label: Use Penance on MO
     type: checkbox
@@ -125,7 +125,7 @@ config:
     label: SW Pain on MO
     type: checkbox
     default: true
-  
+
   ## Out of Combat Settings
   OOC_penance_treshold:
     label: "OOC Penance %"
@@ -136,7 +136,7 @@ config:
   SWD_usage_treshhold:
     label: "SW: Death HP Treshold"
     default: 50
-  
+
   ## Trinket Settings
   living_silk_usage:
     label: "Living Silk usage"
@@ -172,7 +172,7 @@ config:
     max: 5
     default: 0
   ## Automated M+ Settings
-  use_automated_m_plus: 
+  use_automated_m_plus:
     label: "Use Automated M+ Logic"
     type: checkbox
     default: false
@@ -239,14 +239,14 @@ config:
 
 variables:
   ## Use Angelic Feather if moving for treshhold (2) seconds and no feather on me and in combat or out of combat depending on setting
-  use_af: 
+  use_af:
     ((config.angelic_feather_usage=2&player.combat)
     |(config.angelic_feather_usage=3&!player.combat)
     |(config.angelic_feather_usage=4))&!buff.angelic_feather.up&moving.time>=config.angelic_feather_movement_time
   ## Someone within 40 yards without my Atonement
   instant_spread_available: (buff.evangelism.stack>0|cooldown.evangelism.ready)
   atonement_refresh_timing: action.power_word_radiance.execute_time*(!var.instant_spread_available)
-  missing_atonement: 
+  missing_atonement:
     group.count(cycle.buff.atonement.remains<=var.atonement_refresh_timing&cycle.range<=40&cycle.range>0)+
     (buff.atonement.remains<=var.atonement_refresh_timing)
   ## Someone within 40 yards without PW:F
@@ -269,7 +269,7 @@ variables:
   hold_penance: cooldown.penance.full_recharge_time<2&talent.holy_ray
   use_amp: config.use_automated_m_plus
   ## Trigger for Living Silk based on percentage of members below a certain threshold
-  living_silk_treshold_trigger: config.living_silk_usage=2&config.living_silk_members_treshold<=group.count(cycle.health.pct<=config.living_silk_hp_treshold)  
+  living_silk_treshold_trigger: config.living_silk_usage=2&config.living_silk_members_treshold<=group.count(cycle.health.pct<=config.living_silk_hp_treshold)
   ## Ara Kara - Avanoxx
   avanoxx_damage_incoming: boss_fight&target.picid=213179&(target.casting.alerting_shrill|target.casting.gossamer_onslaught)
   ## Ara Kara - Anubzekt
@@ -301,7 +301,6 @@ lists:
     - power_word_fortitude,range_check=none,if=var.missing_pwf>0&(lastcast.power_word_fortitude<?config.pwf_fallback_time)>config.pwf_fallback_time
   offensive:
     - shadow_word_pain,if=debuff.shadow_word_pain.refreshable
-    - penance,if=cooldown.penance.full_recharge_time=0|buff.power_of_the_dark_side.up|!cooldown.mind_blast.ready
     - mind_blast
     - shadow_word_death,if=health.pct>=config.SWD_usage_treshhold|talent.void_blast
     - void_blast,if=talent.void_blast&buff.entropic_rift.up
@@ -334,7 +333,7 @@ lists:
     - pain_suppression.focus,name="PS DPS",cycle=members,if=config.pain_suppression_usage=3&cycle.health.pct<config.pain_suppression_threshold
   atonement_spread:
     - evangelism,name="Evangelism (Spread Atonement)",if=var.missing_atonement>1
-    - power_word_radiance,name="PW Radiance (Spread Atonement)",if=var.missing_atonement>1,delay=100
+    - power_word_radiance,name="PW Radiance (Spread Atonement)",if=var.missing_atonement>1,delay=1000
     - penance.focus,name="Penance (Spread Atonement)",cycle=members,if=cycle.range>0&cycle.range<=40&cycle.buff.atonement.down
     - power_word_shield.focus,name="PW Shield (Weak and Woe, not shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&!cycle.buff.atonement.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
     - power_word_shield.focus,name="PW Shield (Weal and Woe, alredy shielded)",cycle=members,if=cycle.range>0&cycle.range<=40&!cycle.buff.power_word_shield.up&(var.weal_and_woe_stacks=config.weal_and_woe_min_stacks|talent.void_blast)
@@ -348,16 +347,14 @@ lists:
     - call_action_list,name=auto_heal
     - call_action_list,name=auto_target_ranged
     # Combat overrides.
-    - return,if=!player.combat&!((config.auto_combat.has(1)&target.quest_mob&target.enemy)|(config.auto_combat.has(2)&target.combat&target.enemy)|(config.auto_combat.has(3)&player.auto_attacking&target.enemy))                                                                                                 
-    - return,if=!player.combat&config.auto_combat.has(0)   
+    - return,if=!player.combat&!((config.auto_combat.has(1)&target.quest_mob&target.enemy)|(config.auto_combat.has(2)&target.combat&target.enemy)|(config.auto_combat.has(3)&player.auto_attacking&target.enemy))
+    - return,if=!player.combat&config.auto_combat.has(0)
     # AoE Interrupt
     - psychic_scream,if=interrupts.8y.count>=2|interrupts.8y.stun.count>=2
     # Target Check
     - return,if=!target.valid&!((config.auto_combat.has(1)&target.quest_mob&target.enemy&!target.dead)|(config.auto_combat.has(2)&target.combat&target.enemy&!target.dead)|(config.auto_combat.has(3)&player.auto_attacking&target.enemy&!target.dead))
-    - return,if=!target.valid&config.auto_combat.has(0)   
+    - return,if=!target.valid&config.auto_combat.has(0)
   dispels:
-    - dispel_magic,if=player.dispelable.list
-    - dispel_magic.focus,cycle=members,if=cycle.dispelable.list
     - purify,if=player.dispelable.list
     - purify.focus,cycle=members,if=cycle.dispelable.list
   main:
