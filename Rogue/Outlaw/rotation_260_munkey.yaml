@@ -125,6 +125,8 @@ lists:
     - numbing_poison,range_check=none,if=!pred.buff.numbing_poison.up&config.oh_poison=4
     - call_action_list,name=defensives,if=config.auto_defensives&player.combat
     - stealth,range_check=none,if=!player.combat&!var.stealth_up&config.auto_stealth
+    - return,if=!player.combat
+    - target_enemy,if=target.dead|!target.attackable|!target.combat
     - call_action_list,name=cds
     - run_action_list,name=finisher,if=var.finish_condition
     - call_action_list,name=build
