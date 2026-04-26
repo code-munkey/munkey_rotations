@@ -1,9 +1,9 @@
-version: 1.0
-author: munkey
-blocked: false
 spec: 260
 name: "Roll the dice (M+)"
+author: "Munkey"
+version: "1.1"
 description: "Outlaw Rogue rotation based on multiple sources and logs."
+entry: main
 
 movement_allowed: true
 
