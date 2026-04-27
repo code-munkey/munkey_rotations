@@ -84,7 +84,8 @@ lists:
   interrupts:
     - kick,if=interrupt.target.check
     - kick.focus,if=interrupt.focus.check
-    - kidney_shot,if=target.should_stun&combo_points>0
+    - kidney_shot,if=(interrupt.target.check|target.should_stun)&combo_points>0
+    - shiv,if=target.purgeable.enrage
     - blind,if=interrupt.target.check
     - kick.mouseover,if=interrupt.mouseover.check
 
@@ -113,7 +114,7 @@ lists:
     - stealth,range_check=none,if=!player.combat&!var.stealth_up&config.auto_stealth
     - return,if=!target.combat|target.range>15
     - target_enemy,if=target.dead|!target.attackable|!target.combat|(target.range>15&player.combat)
-    - call_action_list,name=cds
+    - call_action_list,name=cds,if=fight_remains>12|boss_fight
     - run_action_list,name=finisher,if=var.finish_condition
     - call_action_list,name=build
 
