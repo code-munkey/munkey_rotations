@@ -73,27 +73,8 @@ config:
     default: 50
 
 variables:
-  # Target
-  target_attackable: target.exists&target.enemy&target.alive&target.range<=8
-  enemies_melee: enemies.8y
-
-  # Combo Points
-  cp_max: combo_points>=combo_points.max
-  cp_bte: combo_points>=config.finisher_cp
-  cp_dispatch: combo_points>=config.dispatch_cp
-  cp_ar: combo_points<=2
-  cp_builder: combo_points<=5
-  cp_pistol_1_3: combo_points>=1&combo_points<=3
-
-  # Buffs/Stats
   rtb_buff_count: ((1*buff.one_of_a_kind.up)+(2*buff.double_trouble.up)+(3*buff.triple_threat.up)+(4*buff.jackpot.up))
-  blade_flurry_up: buff.blade_flurry.up
-  opportunity_stacks: buff.opportunity.stack
   stealth_up: buff.stealth.up|buff.vanish.up|buff.shadow_dance.up
-  mh_poison_up: (config.mh_poison=1|config.mh_poison=2&buff.instant_poison.up|config.mh_poison=3&buff.wound_poison.up)
-  oh_poison_up: (config.oh_poison=1|config.oh_poison=2&buff.atrophic_poison.up|config.oh_poison=3&buff.crippling_poison.up|config.oh_poison=4&buff.numbing_poison.up)
-
-  # Defensive
   hp_low: health.pct<config.crimson_vial_pct
   finish_condition: combo_points>=combo_points.max-1-(1*(!cooldown.between_the_eyes.ready)&((talent.hand_of_fate.enabled)|(cooldown.killing_spree.ready)))
   stop_casting: player.channeling&energy.time_to_max<gcd*1.5
@@ -103,11 +84,11 @@ lists:
   interrupts:
     - kick,if=interrupt.target.check
     - kick.focus,if=interrupt.focus.check
-    - kidney_shot,if=inerrupt.focus.check&combo_points>0
+    - kidney_shot,if=target.should_stun&combo_points>0
     - blind,if=interrupt.target.check
     - kick.mouseover,if=interrupt.mouseover.check
-  main:
-    - stop_casting,interrupt=true,if=var.stop_casting
+
+  system:
     - call_action_list,name=spell_queue
     - call_action_list,name=sanity_checks
     - call_action_list,name=auto_heal
@@ -117,11 +98,17 @@ lists:
     - call_action_list,name=defensives
     - call_action_list,name=auto_dispel,if=config.auto_target
     - call_action_list,name=auto_freedom
-    - instant_poison,range_check=none,if=!pred.buff.instant_poison.up&config.mh_poison=2
-    - wound_poison,range_check=none,if=!pred.buff.wound_poison.up&config.mh_poison=3
-    - atrophic_poison,range_check=none,if=!pred.buff.atrophic_poison.up&config.oh_poison=2
-    - crippling_poison,range_check=none,if=!pred.buff.crippling_poison.up&config.oh_poison=3
-    - numbing_poison,range_check=none,if=!pred.buff.numbing_poison.up&config.oh_poison=4
+
+  poisons:
+    - instant_poison,range_check=none,if=config.mh_poison=2&(buff.instant_poison.down&!prev_gcd.1.instant_poison)
+    - wound_poison,range_check=none,if=config.mh_poison=3&(buff.wound_poison.down&!prev_gcd.1.wound_poison)
+    - atrophic_poison,range_check=none,if=config.oh_poison=2&(buff.atrophic_poison.down&!prev_gcd.1.atrophic_poison)
+    - crippling_poison,range_check=none,if=config.oh_poison=3&(buff.crippling_poison.down&!prev_gcd.1.crippling_poison)
+    - numbing_poison,range_check=none,if=config.oh_poison=4&(buff.numbing_poison.down&!prev_gcd.1.numbing_poison)
+  main:
+    - stop_casting,interrupt=true,if=var.stop_casting
+    - call_action_list,name=system
+    - call_action_list,name=poisons
     - call_action_list,name=defensives,if=config.auto_defensives&player.combat
     - stealth,range_check=none,if=!player.combat&!var.stealth_up&config.auto_stealth
     - return,if=!target.combat|target.range>15
