@@ -36,6 +36,10 @@ config:
     label: "Auto-stealth"
     type: checkbox
     default: true
+  blade_rush_melee_only:
+    label: "Blade Rush only in melee"
+    type: checkbox
+    default: true
   auto_target:
     label: "Auto-target"
     type: checkbox
@@ -112,8 +116,8 @@ lists:
     - call_action_list,name=poisons
     - call_action_list,name=defensives,if=config.auto_defensives&player.combat
     - stealth,range_check=none,if=!player.combat&!var.stealth_up&config.auto_stealth
+    - target_enemy,if=target.dead|!target.attackable|!target.combat|(target.range<=15&player.combat)
     - return,if=!target.combat|target.range>15
-    - target_enemy,if=target.dead|!target.attackable|!target.combat|(target.range>15&player.combat)
     - call_action_list,name=cds,if=fight_remains>12|boss_fight
     - run_action_list,name=finisher,if=var.finish_condition
     - call_action_list,name=build
@@ -130,7 +134,7 @@ lists:
     - preparation,if=cooldown.adrenaline_rush.remains>30&!cooldown.between_the_eyes.ready|fight_remains<30
     - keep_it_rolling,if=var.rtb_buff_count>=config.kir_min_buffs
     - roll_the_bones,if=var.rtb_buff_count<=1+(buff.loaded_dice.up&cooldown.between_the_eyes.ready)
-    - blade_rush
+    - blade_rush,if=(config.blade_rush_melee_only&target.range<=8)|!config.blade_rush_melee_only
     - vanish,if=!variable.finish_condition&talent.hidden_opportunity&!buff.audacity.up&!buff.opportunity.up
     - shadowmeld,if=!variable.finish_condition&talent.hidden_opportunity&!buff.audacity.up&!buff.opportunity.up
     - potion,if=buff.bloodlust.react|fight_remains<30|buff.adrenaline_rush.up
