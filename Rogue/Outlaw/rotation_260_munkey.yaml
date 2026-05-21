@@ -1,7 +1,7 @@
 spec: 260
 name: "Roll the dice (M+)"
 author: "Munkey"
-version: "1.2"
+version: "1.5"
 description: "Outlaw Rogue rotation based on multiple sources and logs"
 entry: main
 
@@ -36,10 +36,12 @@ config:
     label: "Auto-stealth"
     type: checkbox
     default: true
-  blade_rush_melee_only:
-    label: "Blade Rush only in melee"
-    type: checkbox
-    default: true
+  blade_rush_range:
+    label: "Blade rush max range"
+    type: slider
+    min: 5
+    max: 20
+    default: 5
   auto_target:
     label: "Auto-target"
     type: checkbox
@@ -47,9 +49,9 @@ config:
   kir_min_buffs:
     label: "Keep It Rolling Min Buffs"
     type: slider
-    min: 3
+    min: 2
     max: 4
-    default: 3
+    default: 2
     description: "Min buffs to use Keep It Rolling"
   finisher_cp:
     label: "Finisher CP"
@@ -80,29 +82,25 @@ variables:
   rtb_buff_count: ((1*buff.one_of_a_kind.up)+(2*buff.double_trouble.up)+(3*buff.triple_threat.up)+(4*buff.jackpot.up))
   stealth_up: buff.stealth.up|buff.vanish.up|buff.shadow_dance.up
   hp_low: health.pct<config.crimson_vial_pct
-  finish_condition: combo_points>=combo_points.max-1-(1*(!cooldown.between_the_eyes.ready)&((talent.hand_of_fate.enabled)|(cooldown.killing_spree.ready)))
-  stop_casting: player.channeling&energy.time_to_max<gcd*1.5
+  finish_condition: (combo_points>=combo_points.max-1-(1*(!cooldown.between_the_eyes.ready)&((talent.hand_of_fate.enabled)|(cooldown.killing_spree.ready))))
+  cancel_spree: energy.time_to_max<2&var.finish_condition&(player.channeling&prev_gcd.1.killing_spree)
 
 lists:
 
   interrupts:
     - kick,if=interrupt.target.check
     - kick.focus,if=interrupt.focus.check
-    - kidney_shot,if=(interrupt.target.check|target.should_stun)&combo_points>0
+    - kick.mouseover,if=interrupt.mouseover.check
+    - kidney_shot,if=target.should_stun&combo_points<=2
     - shiv,if=target.purgeable.enrage
     - blind,if=interrupt.target.check
-    - kick.mouseover,if=interrupt.mouseover.check
 
   system:
     - call_action_list,name=spell_queue
     - call_action_list,name=sanity_checks
     - call_action_list,name=auto_heal
-    - call_action_list,name=auto_target
     - call_action_list,name=precombat
     - call_action_list,name=interrupts
-    - call_action_list,name=defensives
-    - call_action_list,name=auto_dispel,if=config.auto_target
-    - call_action_list,name=auto_freedom
 
   poisons:
     - instant_poison,range_check=none,if=config.mh_poison=2&(buff.instant_poison.down&!prev_gcd.1.instant_poison)
@@ -111,30 +109,31 @@ lists:
     - crippling_poison,range_check=none,if=config.oh_poison=3&(buff.crippling_poison.down&!prev_gcd.1.crippling_poison)
     - numbing_poison,range_check=none,if=config.oh_poison=4&(buff.numbing_poison.down&!prev_gcd.1.numbing_poison)
   main:
-    - stop_casting,interrupt=true,if=var.stop_casting
+    - stop_casting,if=var.cancel_spree
     - call_action_list,name=system
     - call_action_list,name=poisons
     - call_action_list,name=defensives,if=config.auto_defensives&player.combat
     - stealth,range_check=none,if=!player.combat&!var.stealth_up&config.auto_stealth
-    - target_enemy,if=target.dead|!target.attackable|!target.combat|(target.range<=15&player.combat)
-    - return,if=!target.combat|target.range>15
-    - call_action_list,name=cds,if=fight_remains>12|boss_fight
+    - return,if=!player.combat&!target.combat
+    - target_enemy,delay=100,if=config.auto_target&(target.dead|!target.attackable|!target.combat|(target.range>=8&player.combat)&enemies.combat.8y>0)
+    - return,if=!target.combat|target.range>8
     - run_action_list,name=finisher,if=var.finish_condition
+    - call_action_list,name=cds
     - call_action_list,name=build
 
   finisher:
-    - between_the_eyes,if=cooldown.adrenaline_rush.remains>30|buff.adrenaline_rush.up|!talent.supercharger|!talent.zero_in
+    - between_the_eyes
     - killing_spree
     - coup_de_grace
-    - dispatch
+    - dispatch,if=combo_points>=config.dispatch_cp
 
   cds:
-    - adrenaline_rush,if=!buff.adrenaline_rush.up&(!var.finish_condition|!talent.improved_adrenaline_rush)&combo_points<=2
-    - blade_flurry,if=enemies.combat.8y>=2&buff.blade_flurry.remains<gcd
-    - preparation,if=cooldown.adrenaline_rush.remains>30&!cooldown.between_the_eyes.ready|fight_remains<30
+    - preparation,if="!cooldown.between_the_eyes.ready&!cooldown.adrenaline_rush.ready&!cooldown.blade_rush.ready"
+    - roll_the_bones,if=var.rtb_buff_count<config.kir_min_buffs
     - keep_it_rolling,if=var.rtb_buff_count>=config.kir_min_buffs
-    - roll_the_bones,if=var.rtb_buff_count<=1+(buff.loaded_dice.up&cooldown.between_the_eyes.ready)
-    - blade_rush,if=(config.blade_rush_melee_only&target.range<=8)|!config.blade_rush_melee_only
+    - adrenaline_rush,if=(!talent.improved_adrenaline_rush.enabled&buff.adrenaline_rush.down)|(talent.improved_adrenaline_rush.enabled&buff.adrenaline_rush.down&combo_points<=2)
+    - blade_flurry,if=enemies.combat.8y>=2&buff.blade_flurry.remains<gcd
+    - blade_rush,if=target.range<=config.blade_rush_range
     - vanish,if=!variable.finish_condition&talent.hidden_opportunity&!buff.audacity.up&!buff.opportunity.up
     - shadowmeld,if=!variable.finish_condition&talent.hidden_opportunity&!buff.audacity.up&!buff.opportunity.up
     - potion,if=buff.bloodlust.react|fight_remains<30|buff.adrenaline_rush.up
@@ -157,7 +156,10 @@ lists:
     - ambush,if=talent.hidden_opportunity
     - sinister_strike
   defensives:
-    - feint,if=!buff.feint.up
+    - evasion,if=!cooldown.feint.ready&!buff.evasion.up&incoming_cast.player&incoming_cast.player.remains<0.1
+    - feint,if=!buff.feint.up&incoming_cast.zephyr&incoming_cast.zephyr.remains<=0.2
+    - feint,if=!buff.feint.up&talent.elusiveness.enabled&incoming_cast.player&incoming_cast.player.remains<0.1
+    - feint,if=!buff.feint.up&incoming_cast.aoe&incoming_cast.aoe.remains<=0.2
     - cloak_of_shadows,if=player.has_magic_debuff
-    - evasion,if=health.pct<30
+    - evasion,if=target.threat=3&(player.indungeon|player.inmythicplus|player.inraid)
     - crimson_vial,if=var.hp_low
