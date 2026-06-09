@@ -117,7 +117,6 @@ lists:
     - return,if=!player.combat&!target.combat
     - target_enemy,delay=100,if=config.auto_target&(target.dead|!target.attackable|!target.combat|(target.range>=8&player.combat)&enemies.combat.8y>0)
     - return,if=!target.combat|target.range>8
-    - roll_the_bones,if=var.rtb_buff_count<config.kir_min_buffs&cooldown.adrenaline_rush.remains>12
     - run_action_list,name=finisher,if=var.finish_condition
     - call_action_list,name=cds
     - call_action_list,name=build
@@ -131,7 +130,7 @@ lists:
   cds:
     - adrenaline_rush,if=!buff.adrenaline_rush.up&(!var.finish_condition|!talent.improved_adrenaline_rush)&combo_points<=2
     - blade_flurry,if=enemies.combat.8y>=2&buff.blade_flurry.remains<gcd
-    - preparation,if="!cooldown.between_the_eyes.ready&!cooldown.adrenaline_rush.ready&!cooldown.blade_rush.ready"
+    - preparation,if=!cooldown.between_the_eyes.ready&!cooldown.adrenaline_rush.ready&!cooldown.blade_rush.ready
     - keep_it_rolling,if=var.rtb_buff_count>=config.kir_min_buffs
     - roll_the_bones,if=var.rtb_buff_count<=1+(buff.loaded_dice.up&cooldown.between_the_eyes.ready)
     - blade_rush,if=target.range<=config.blade_rush_range
